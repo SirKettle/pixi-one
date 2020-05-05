@@ -33,7 +33,11 @@ import {
 } from './collision';
 import { createActor, createTile, initActor } from './actor';
 import { generateBulletData } from '../specs/bullets';
-import { getLevel, getTileAssetKeys } from '../specs/levels';
+import {
+  getLevel,
+  getMissionAssetKeys,
+  getTileAssetKeys,
+} from '../specs/levels';
 
 const updateTime = (pixiGame, delta) => {
   const prevSession = pixiGame.time.session;
@@ -310,13 +314,9 @@ export const initPixi = ({
   app.loader.load(() => {
     loadAssets({
       loader: app.loader,
-      assetKeys: [
-        'spacecraft',
-        'bullet',
-        'planetGreen',
-        'planetSandy',
-        'starSun',
-      ],
+      assetKeys: ['spacecraft', 'bullet'].concat(
+        getMissionAssetKeys(levelKey, missionKey)
+      ),
       tileAssetKeys: getTileAssetKeys(levelKey),
     }).then(() => {
       addInitialActors(pixiGame);

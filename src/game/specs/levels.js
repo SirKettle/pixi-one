@@ -1,4 +1,4 @@
-import { path, pathOr, propEq, propOr, uniq } from 'ramda';
+import { path, pathOr, prop, propEq, propOr, uniq } from 'ramda';
 
 export const levels = [
   {
@@ -83,13 +83,46 @@ export const levels = [
             life: 15,
           },
           {
+            assetKey: 'tCraft',
+            x: 725,
+            y: 800,
+            rotationSpeed: 0.025,
+            life: 15,
+            velocity: {
+              x: -1,
+              y: -1,
+            },
+          },
+          {
+            assetKey: 'tCraft',
+            x: 600,
+            y: 800,
+            rotationSpeed: -0.075,
+            life: 15,
+            velocity: {
+              x: -1.2,
+              y: -1,
+            },
+          },
+          {
+            assetKey: 'tCraft',
+            x: 705,
+            y: 820,
+            life: 15,
+            velocity: {
+              x: -1,
+              y: -1.5,
+            },
+          },
+        ],
+        passiveActors: [
+          {
             assetKey: 'starSun',
             x: 150,
             y: 500,
             alpha: 0.85,
           },
         ],
-        passiveActors: [],
       },
       {
         key: 'm2',
@@ -110,6 +143,15 @@ export const levels = [
     ],
   },
 ];
+
+export function getMissionAssetKeys(levelKey, missionKey) {
+  const mission = getMission(levelKey, missionKey);
+  return uniq(
+    propOr([], 'actors')(mission)
+      .concat(propOr([], 'passiveActors')(mission))
+      .map(prop('assetKey'))
+  );
+}
 
 export function getTileAssetKeys(key) {
   const level = getLevel(key);
