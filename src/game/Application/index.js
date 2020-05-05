@@ -1,5 +1,5 @@
 import { Application, Container } from 'pixi.js';
-import { prop } from 'ramda';
+import { pick, prop } from 'ramda';
 
 import { getAsset, setAsset } from '../store/pixiAssets';
 
@@ -254,6 +254,8 @@ export const initPixi = ({
   // }
 
   const pixiGame = {
+    id: gameState.id,
+    name: gameState.name,
     app: setAsset(app),
     containers: {},
     player: {},
@@ -276,12 +278,12 @@ export const initPixi = ({
     handlers: {
       onQuit: () => {
         const saveData = {
+          ...pick(['id', 'name', 'time'])(pixiGame),
           player: { ...prop('data')(pixiGame.player) },
           actors: pixiGame.actors.map(prop('data')),
           passiveActors: pixiGame.passiveActors.map(prop('data')),
           bullets: pixiGame.bullets.map(prop('data')),
           level: { ...pixiGame.level },
-          time: { ...pixiGame.time },
         };
 
         onSaveGame(saveData);
