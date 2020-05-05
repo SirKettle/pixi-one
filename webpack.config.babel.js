@@ -4,6 +4,7 @@ import path from 'path';
 
 export default {
   entry: {
+    bp: '@babel/polyfill',
     app: './src/index.js',
   },
   output: {

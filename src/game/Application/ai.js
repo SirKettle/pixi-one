@@ -8,11 +8,14 @@ const mission = {
 };
 
 function onUpdate() {
-  const currentCoords = { x: 12, y: 18 };
-
-  if (isTargetInRange()) {
-    followTarget();
-  } else {
-    followCoords();
-  }
+  // const currentCoords = { x: 12, y: 18 };
+  //
+  // if (isTargetInRange()) {
+  //   followTarget();
+  // } else {
+  //   followCoords();
+  // }
 }
+
+
+
