@@ -63,9 +63,11 @@ export const createActor = (container) => (data) => {
   return actor;
 };
 
-export const getActorByUid = ({ player, actors }, uid) => {
+export const getActorByUid = ({ player, actors, bullets }, uid) => {
   if (player.uid === uid) {
     return player;
   }
-  return actors.find(propEq('uid', uid));
+  const actor = actors.find(propEq('uid', uid));
+
+  return actor || bullets.find(propEq('uid', uid));
 };

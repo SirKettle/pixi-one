@@ -13,7 +13,7 @@ const defaultPlanet = {
     },
   },
   initialData: {
-    life: 15,
+    life: 1000,
     mass: 1000,
   },
 };

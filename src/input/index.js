@@ -34,20 +34,30 @@ const initialGamepadState = {
 
 let gamepadCache = initialGamepadState;
 
-function onConnect(event) {
-  console.log('Gamepad connected :)', event.gamepad);
+function setGamepadType(gamepad = {}) {
+  const { axes, buttons } = gamepad;
+  if (!axes || !buttons) {
+    gamepadCache = {
+      ...gamepadCache,
+      gamepadType: undefined,
+    };
+    return;
+  }
+  // for now - hard code to PS$ dualshock
   gamepadCache = {
     ...gamepadCache,
     gamepadType: 'dualshock',
   };
 }
 
+function onConnect(event) {
+  console.log('Gamepad connected :)', event.gamepad);
+  setGamepadType(event.gamepad);
+}
+
 function onDisconnect(event) {
   console.log('Gamepad disconnected :(', event);
-  gamepadCache = {
-    ...gamepadCache,
-    gamepadType: undefined,
-  };
+  setGamepadType();
 }
 
 function onKeydown({ key }) {
@@ -71,8 +81,6 @@ function onKeyup({ key }) {
       status: BUTTON_STATE.UP,
     },
   };
-
-  console.log({ ...gamepadCache.keys });
 }
 
 function someButtonsPressed(buttons = [], buttonIndices = []) {
@@ -169,8 +177,6 @@ function getForwardThrust(axes, axisIndexMap) {
   if (axes && axisIndexMap) {
     const gamepadVal = throttleAxisValue(axes[axisIndexMap.forward]);
     return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
-
-    return throttleAxisValue(axes[axisIndexMap.forward]);
   }
   return kVal;
 }
@@ -184,18 +190,25 @@ function getTurnThrust(axes, axisIndexMap) {
   if (axes && axisIndexMap) {
     const gamepadVal = throttleAxisValue(axes[axisIndexMap.turn]);
     return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
+  }
+  return kVal;
+}
 
-    return throttleAxisValue(axes[axisIndexMap.forward]);
+function getStrafeThrust(axes, axisIndexMap) {
+  const kVal = isButtonDown('z') ? -1 : isButtonDown('x') ? 1 : 0;
+  if (axes && axisIndexMap) {
+    const gamepadVal = throttleAxisValue(axes[axisIndexMap.strafe]);
+    return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
   }
   return kVal;
 }
 
 export function onUpdate(deltaMs) {
-  const prevState = { ...gamepadCache };
   const gamepad = navigator.getGamepads()[0] || {};
-  // todo - add keyboard here and integrate!
+  setGamepadType(gamepad);
 
   const { axes, buttons } = gamepad;
+  const prevState = { ...gamepadCache };
 
   const fireOnePressed =
     someButtonsPressed(
@@ -206,9 +219,7 @@ export function onUpdate(deltaMs) {
   const axisIndexMap = getAxisIndexMap(prevState.gamepadType);
   const forwardsThrustValue = getForwardThrust(axes, axisIndexMap);
   const turnThrustValue = getTurnThrust(axes, axisIndexMap);
-  const strafeThrustValue = axisIndexMap
-    ? throttleAxisValue(axes[axisIndexMap.strafe])
-    : 0;
+  const strafeThrustValue = getStrafeThrust(axes, axisIndexMap);
 
   const state = {
     ...prevState,

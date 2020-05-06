@@ -45,15 +45,15 @@ const updateTime = (pixiGame, delta) => {
     prevSession.elapsedMs + getAsset(pixiGame.app).ticker.elapsedMS;
   const elapsedS = Math.floor(elapsedMs / 1000);
 
-  if (elapsedS !== prevSession.elapsedS && elapsedS % 5 === 0) {
-    console.log('every 5 sec save');
-    // onSaveGame(state);
-  }
-
-  if (elapsedS !== prevSession.elapsedS && elapsedS === 22) {
-    console.log('time up - to save and exit');
-    // onSaveAndExitGame(state);
-  }
+  // if (elapsedS !== prevSession.elapsedS && elapsedS % 5 === 0) {
+  //   console.log('every 5 sec save');
+  //   // onSaveGame(state);
+  // }
+	//
+  // if (elapsedS !== prevSession.elapsedS && elapsedS === 22) {
+  //   console.log('time up - to save and exit');
+  //   // onSaveAndExitGame(state);
+  // }
 
   return {
     ...pixiGame.time,

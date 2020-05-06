@@ -21,7 +21,7 @@ export const spacecraft = {
   },
   initialData: {
     shield: 1,
-    life: 10,
+    life: 200,
     mass: 100,
     fuelCapacity: 100,
   },
@@ -54,8 +54,8 @@ export const tCraft = {
   },
   initialData: {
     shield: 1,
-    life: 10,
-    mass: 100,
+    life: 100,
+    mass: 50,
     fuelCapacity: 100,
   },
   imageUrl: tCraftImage,

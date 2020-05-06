@@ -4,7 +4,7 @@ import { getFrameTexture } from '../store/textures';
 import { getSpecs } from '../specs/getSpecs';
 import {
   combineVelocity,
-  defaultVelocity,
+  defaultVector,
   getVelocity,
 } from '../utils/physics';
 
@@ -19,7 +19,7 @@ export const updateActorPosition = ({ data, spriteId }, delta) => {
   const sprite = getAsset(spriteId);
 
   if (!data.velocity) {
-    data.velocity = defaultVelocity;
+    data.velocity = defaultVector;
   }
 
   data.x += data.velocity.x;

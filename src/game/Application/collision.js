@@ -1,7 +1,12 @@
 import { getAsset } from '../store/pixiAssets';
-import { compose, path, propEq, uniq, unnest } from 'ramda';
+import { compose, path, pathOr, pick, propEq, uniq, unnest } from 'ramda';
 import { getSpecs } from '../specs/getSpecs';
-import { getRelativeVelocity, getVelocity } from '../utils/physics';
+import {
+  getCollisionNorm,
+  getCollisionSpeed,
+  relativeVelocity,
+  getVelocity,
+} from '../utils/physics';
 import { getActorByUid } from './actor';
 
 export const getActorRadius = ({ assetKey, spriteId }) => {
@@ -44,12 +49,9 @@ export const isCollision = (actor1, actor2) => {
   return isSpriteCircleIntersect(actor1, actor2);
 };
 
-export const getActorDamage = ({ data }) => {
-  if (data.isBullet) {
-    return Math.min(1, data.life) * data.power;
-  }
-
-  return data.power || data.mass;
+export const getActorDamage = ({ data }, speed) => {
+  const damage = (speed * (data.power || data.mass)) / 20;
+  return data.isBullet ? Math.min(1, data.life) * damage : damage;
 };
 
 const collisionPairs = (actors) =>
@@ -64,76 +66,71 @@ const collisionPairs = (actors) =>
 export const getUniqCollisionPairs = compose(uniq, unnest, collisionPairs);
 
 export const handleCollisions = (pixiGame) => {
-  pixiGame.bullets.forEach((bullet) => {
-    pixiGame.actors.forEach((actor) => {
-      if (!bullet.data.collisionBlacklist.includes(actor.uid)) {
-        const collision = isCollision(bullet, actor);
-        if (collision) {
-          bullet.data.collisionBlacklist.push(actor.uid); // only hit once
-          actor.data.life -= getActorDamage(bullet);
-          bullet.data.life -= getActorDamage(actor);
-          console.log('hit', getActorDamage(bullet), actor.data.life);
-        }
+  const allActors = pixiGame.actors.concat(pixiGame.bullets, [pixiGame.player]);
+  const collisionPairs = getUniqCollisionPairs(allActors);
+
+  if (collisionPairs.length) {
+    collisionPairs.forEach(([aUid, bUid]) => {
+      const actorA = getActorByUid(pixiGame, aUid);
+      const actorB = getActorByUid(pixiGame, bUid);
+
+      if (!actorA || !actorB) {
+        return;
       }
+
+      const vCollisionNorm = getCollisionNorm(
+        pick(['x', 'y'])(actorA.data),
+        pick(['x', 'y'])(actorB.data)
+      );
+
+      const vRelativeVelocity = relativeVelocity(
+        path(['data', 'velocity'])(actorA),
+        path(['data', 'velocity'])(actorB)
+      );
+
+      const collisionSpeed = getCollisionSpeed(
+        vCollisionNorm,
+        vRelativeVelocity
+      );
+
+      if (collisionSpeed <= 0) {
+        // moving apart - so no action needed
+        return;
+      }
+
+      console.log(`${actorA.uid}: collision detected with ${actorB.uid}`);
+
+      const actorAMass = pathOr(1, ['data', 'mass'])(actorA);
+      const actorBMass = pathOr(1, ['data', 'mass'])(actorB);
+      const impulse = (2 * collisionSpeed) / (actorAMass + actorBMass);
+
+      // update actor velocities
+      actorA.data.velocity.x -= impulse * actorBMass * vCollisionNorm.x;
+      actorA.data.velocity.y -= impulse * actorBMass * vCollisionNorm.y;
+      actorB.data.velocity.x += impulse * actorAMass * vCollisionNorm.x;
+      actorB.data.velocity.y += impulse * actorAMass * vCollisionNorm.y;
+
+      console.log('BEFORE', actorA.data.assetKey, actorA.data.life);
+      console.log('BEFORE', actorB.data.assetKey, actorB.data.life);
+
+      const actorADamage = getActorDamage(actorA, collisionSpeed);
+      const actorBDamage = getActorDamage(actorB, collisionSpeed);
+
+      actorA.data.life -= actorBDamage;
+      actorB.data.life -= actorADamage;
+
+      console.log(
+        'AFTER',
+        actorA.data.assetKey,
+        actorA.data.life,
+        actorBDamage
+      );
+      console.log(
+        'AFTER',
+        actorB.data.assetKey,
+        actorB.data.life,
+        actorADamage
+      );
     });
-  });
-  // const collisionPairs = getUniqCollisionPairs(
-  //   pixiGame.actors.concat([pixiGame.player])
-  // );
-  //
-  // if (collisionPairs.length) {
-  //   collisionPairs.forEach(([aUid, bUid]) => {
-  //     const actorA = getActorByUid(pixiGame, aUid);
-  //     const actorB = getActorByUid(pixiGame, bUid);
-  //
-  //     const vCollision = {
-  //       x: actorA.data.x - actorB.data.x,
-  //       y: actorA.data.y - actorB.data.y,
-  //     };
-  //     const distance = Math.hypot(vCollision.x, vCollision.y);
-  //     const vCollisionNorm = {
-  //       x: vCollision.x / distance,
-  //       y: vCollision.y / distance,
-  //     };
-  //     const vRelativeVelocity = {
-  //       x:
-  //         path(['data', 'velocity', 'x'])(actorA) +
-  //         path(['data', 'velocity', 'x'])(actorB),
-  //       y:
-  //         path(['data', 'velocity', 'y'])(actorA) +
-  //         path(['data', 'velocity', 'y'])(actorB),
-  //     };
-  //     // const vRelativeVelocity = getRelativeVelocity(
-  //     //   path(['data', 'velocity'])(actorA),
-  //     //   path(['data', 'velocity'])(actorB)
-  //     // );
-  //     const speed =
-  //       vRelativeVelocity.x * vCollisionNorm.x +
-  //       vRelativeVelocity.y * vCollisionNorm.y;
-  //
-  //     if (speed < 0) {
-  //       return;
-  //     }
-  //     debugger;
-  //
-  //     actorA.data.velocity.x -= speed * vCollisionNorm.x;
-  //     actorA.data.velocity.y -= speed * vCollisionNorm.y;
-  //     actorB.data.velocity.x = speed * vCollisionNorm.x;
-  //     actorB.data.velocity.y -= speed * vCollisionNorm.y;
-  //
-  //     // const relV = getRelativeVelocity(
-  //     //   path(['data', 'velocity'])(actorA),
-  //     //   path(['data', 'velocity'])(actorB)
-  //     // );
-  //
-  //     console.log(
-  //       `${actorA.uid}: collision detected with ${actorB.uid}`
-  //       // path(['data', 'velocity'])(actorA),
-  //       // path(['data', 'velocity'])(actorB),
-  //       // relV
-  //     );
-  //
-  //     // debugger;
-  //   });
-  // }
+  }
 };

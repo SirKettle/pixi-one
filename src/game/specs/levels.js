@@ -73,21 +73,18 @@ export const levels = [
               x: 1,
               y: 2,
             },
-            life: 5,
           },
           {
             assetKey: 'planetSandy',
             x: 25,
             y: 300,
             rotationSpeed: 0.025,
-            life: 15,
           },
           {
             assetKey: 'tCraft',
             x: 725,
             y: 800,
             rotationSpeed: 0.025,
-            life: 15,
             velocity: {
               x: -1,
               y: -1,
@@ -98,7 +95,6 @@ export const levels = [
             x: 600,
             y: 800,
             rotationSpeed: -0.075,
-            life: 15,
             velocity: {
               x: -1.2,
               y: -1,

@@ -41,6 +41,5 @@ export const createTextures = (loader, assetKeys = []) => {
   assetKeys.forEach((assetKey) => {
     const texture = new Texture.from(loader.resources[assetKey].url);
     _textures[assetKey] = setAsset(texture);
-    console.log('create texture', assetKey, _textures[assetKey]);
   });
 };

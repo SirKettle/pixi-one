@@ -12,8 +12,8 @@ const defaultBullet = {
     },
   },
   initialData: {
-    life: 2,
-    mass: 2,
+    life: 4,
+    mass: 25,
   },
 };
 
@@ -42,9 +42,9 @@ export const generateBulletData = (
     y: host.data.y,
     direction: host.data.rotation,
     velocity: combineVelocity(host.data.velocity, bulletVelocity),
-    life: 2 + hostFirePower,
+    life: 2 + hostFirePower * 2,
     mass: hostFirePower * 10,
-    power: hostFirePower * 10,
+    power: hostFirePower * 50,
     scale: 0.25 + hostFirePower * 0.75,
     collisionBlacklist: [host.uid],
   };

@@ -97,8 +97,8 @@ export function getAxisIndexMap(gamepadType) {
   if (gamepadType === 'dualshock') {
     return {
       forward: keyIndexMap[PS4.AXIS_L_Y],
-      strafe: keyIndexMap[PS4.AXIS_L_X],
-      turn: keyIndexMap[PS4.AXIS_R_X],
+      turn: keyIndexMap[PS4.AXIS_L_X],
+      strafe: keyIndexMap[PS4.AXIS_R_X],
     };
   }
   return;
