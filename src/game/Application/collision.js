@@ -1,24 +1,10 @@
-import { getAsset } from '../store/pixiAssets';
-import { compose, path, pathOr, pick, propEq, uniq, unnest } from 'ramda';
-import { getSpecs } from '../specs/getSpecs';
+import { compose, path, pathOr, pick, uniq, unnest } from 'ramda';
 import {
   getCollisionNorm,
   getCollisionSpeed,
   relativeVelocity,
-  getVelocity,
 } from '../utils/physics';
-import { getActorByUid } from './actor';
-
-export const getActorRadius = ({ assetKey, spriteId }) => {
-  const specs = getSpecs(assetKey);
-  return getSpriteRadius(
-    getAsset(spriteId),
-    path(['hitArea', 'basic', 'radius'])(specs)
-  );
-};
-
-export const getSpriteRadius = (sprite, percentage = 0.5) =>
-  Math.max(sprite.width, sprite.height) * percentage;
+import { getActorByUid, getActorRadius, getAllActors } from '../utils/actor';
 
 export const circleIntersect = (x1, y1, r1, x2, y2, r2) => {
   // Calculate the distance between the two circles
@@ -34,16 +20,20 @@ export const isSpriteCircleIntersect = (actor1, actor2) => {
     actor1.data.x,
     actor1.data.y,
     getActorRadius(actor1),
-    // getSpriteRadius(getAsset(actor1.spriteId)),
     actor2.data.x,
     actor2.data.y,
     getActorRadius(actor2)
-    // getSpriteRadius(getAsset(actor2.spriteId))
   );
 };
 
 export const isCollision = (actor1, actor2) => {
   if (actor1.uid === actor2.uid) {
+    return false;
+  }
+  if (
+    pathOr([], ['data', 'collisionBlacklist'])(actor1).includes(actor2.uid) ||
+    pathOr([], ['data', 'collisionBlacklist'])(actor2).includes(actor1.uid)
+  ) {
     return false;
   }
   return isSpriteCircleIntersect(actor1, actor2);
@@ -66,13 +56,13 @@ const collisionPairs = (actors) =>
 export const getUniqCollisionPairs = compose(uniq, unnest, collisionPairs);
 
 export const handleCollisions = (pixiGame) => {
-  const allActors = pixiGame.actors.concat(pixiGame.bullets, [pixiGame.player]);
+  const allActors = getAllActors(pixiGame);
   const collisionPairs = getUniqCollisionPairs(allActors);
 
   if (collisionPairs.length) {
     collisionPairs.forEach(([aUid, bUid]) => {
-      const actorA = getActorByUid(pixiGame, aUid);
-      const actorB = getActorByUid(pixiGame, bUid);
+      const actorA = getActorByUid(pixiGame)(aUid);
+      const actorB = getActorByUid(pixiGame)(bUid);
 
       if (!actorA || !actorB) {
         return;

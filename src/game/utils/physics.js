@@ -19,10 +19,7 @@ export function getCollisionNorm(
   vActorAPosition = defaultVector,
   vActorBPosition = defaultVector
 ) {
-  const vCollision = {
-    x: vActorBPosition.x - vActorAPosition.x,
-    y: vActorBPosition.y - vActorAPosition.y,
-  };
+  const vCollision = relativeVelocity(vActorBPosition, vActorAPosition);
   const distance = Math.hypot(vCollision.x, vCollision.y);
 
   return distance === 0
@@ -41,4 +38,29 @@ export function getCollisionSpeed(
     vRelativeVelocity.x * vCollisionNorm.x +
     vRelativeVelocity.y * vCollisionNorm.y
   );
+}
+
+export function getDistance(
+  vActorAPosition = defaultVector,
+  vActorBPosition = defaultVector
+) {
+  const vCollision = relativeVelocity(vActorBPosition, vActorAPosition);
+  return Math.hypot(vCollision.x, vCollision.y);
+}
+
+export function getDirection(
+  vFromPosition = defaultVector,
+  vToPosition = defaultVector
+) {
+  const vRel = relativeVelocity(vToPosition, vFromPosition);
+  return normalizeDirection(Math.atan2(vRel.y, vRel.x) + Math.PI * 0.5);
+}
+
+export function normalizeDirection(dir) {
+  const maxRadians = Math.PI * 2;
+  let d = dir % maxRadians;
+  while (d < 0) {
+    d += maxRadians;
+  }
+  return d % maxRadians;
 }

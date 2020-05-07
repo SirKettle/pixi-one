@@ -26,13 +26,15 @@ export const bullet = {
 };
 
 // can update this to include other bullets and powerups
-export const generateBulletData = (
+export const generateBulletData = ({
   host,
+  targetDirection,
   hostFirePower,
-  assetKey = 'bullet'
-) => {
+  assetKey = 'bullet',
+}) => {
   const speed = 10 + hostFirePower * 10;
-  const direction = host.data.rotation;
+  const direction =
+    typeof targetDirection === 'number' ? targetDirection : host.data.rotation;
   const bulletVelocity = getVelocity({ speed, direction });
 
   return {
@@ -40,7 +42,7 @@ export const generateBulletData = (
     isBullet: true,
     x: host.data.x,
     y: host.data.y,
-    direction: host.data.rotation,
+    direction,
     velocity: combineVelocity(host.data.velocity, bulletVelocity),
     life: 2 + hostFirePower * 2,
     mass: hostFirePower * 10,

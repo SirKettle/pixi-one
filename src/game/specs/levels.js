@@ -1,4 +1,5 @@
-import { path, pathOr, prop, propEq, propOr, uniq } from 'ramda';
+import { path, pathOr, prop, propEq, propOr, times, uniq } from 'ramda';
+import { getRandomInt } from '../utils/random';
 
 export const levels = [
   {
@@ -55,7 +56,7 @@ export const levels = [
       //   },
       // },
     ],
-    atmosphere: 0, // space 0 - solid 1?? maybe air would be 0.2, water 0.4??
+    atmosphere: 0.05, // space 0 - solid 1?? maybe air would be 0.2, water 0.4??
     missions: [
       {
         key: 'm1',
@@ -81,9 +82,22 @@ export const levels = [
             rotationSpeed: 0.025,
           },
           {
+            team: 'bad',
             assetKey: 'tCraft',
+            ai: true,
             x: 725,
             y: 800,
+            velocity: {
+              x: -1,
+              y: -1,
+            },
+          },
+          {
+            team: 'bad',
+            assetKey: 'spacecraft',
+            ai: true,
+            x: 100,
+            y: 100,
             rotationSpeed: 0.025,
             velocity: {
               x: -1,
@@ -91,17 +105,20 @@ export const levels = [
             },
           },
           {
+            team: 'bad',
             assetKey: 'tCraft',
+            ai: true,
             x: 600,
             y: 800,
-            rotationSpeed: -0.075,
             velocity: {
               x: -1.2,
               y: -1,
             },
           },
           {
+            team: 'bad',
             assetKey: 'tCraft',
+            ai: true,
             x: 705,
             y: 820,
             life: 15,
@@ -110,7 +127,19 @@ export const levels = [
               y: -1.5,
             },
           },
-        ],
+        ].concat(
+          times(() => ({
+            team: 'bad',
+            assetKey: 'tCraft',
+            ai: true,
+            x: getRandomInt(-2000, 2000),
+            y: getRandomInt(-2000, 2000),
+            velocity: {
+              x: -1.2,
+              y: -1,
+            },
+          }))(getRandomInt(10, 20))
+        ),
         passiveActors: [
           {
             assetKey: 'starSun',

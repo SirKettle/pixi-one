@@ -1,8 +1,7 @@
-import { Application, Container } from 'pixi.js';
-import { pick, prop } from 'ramda';
+import { Application, Container, Graphics } from 'pixi.js';
+import { pick, prop, uniq } from 'ramda';
 
 import { getAsset, setAsset } from '../store/pixiAssets';
-
 import {
   subscribe as inputsSubscribe,
   unsubscribe as inputsUnsubscribe,
@@ -14,42 +13,39 @@ import {
   getReverseThruster,
   getTurnThruster,
   getStrafeThruster,
-  isButtonDown,
 } from '../../input';
-
-import {
-  applyThrusters,
-  movePlayer,
-  updateActors,
-  updateTexture,
-  updateTilePosition,
-} from './sprite';
-import { loadAssets } from './loader';
-import {
-  getActorDamage,
-  getSpriteRadius,
-  handleCollisions,
-  isCollision,
-} from './collision';
-import { createActor, createTile, initActor } from './actor';
 import { generateBulletData } from '../specs/bullets';
 import {
   getLevel,
   getMissionAssetKeys,
   getTileAssetKeys,
+  levels,
 } from '../specs/levels';
+import { updateTexture } from '../store/textures';
 
-const updateTime = (pixiGame, delta) => {
+import { loadAssets } from './loader';
+import { handleCollisions } from './collision';
+import {
+  applyThrusters,
+  createActor,
+  createTile,
+  updateActorPosition,
+  updateActors,
+  updateTilePosition,
+} from './actor';
+import { getSpriteRadius } from '../utils/actor';
+import { normalizeDirection } from '../utils/physics';
+
+const updateTime = (pixiGame, delta, deltaMs) => {
   const prevSession = pixiGame.time.session;
-  const elapsedMs =
-    prevSession.elapsedMs + getAsset(pixiGame.app).ticker.elapsedMS;
+  const elapsedMs = prevSession.elapsedMs + deltaMs;
   const elapsedS = Math.floor(elapsedMs / 1000);
 
   // if (elapsedS !== prevSession.elapsedS && elapsedS % 5 === 0) {
   //   console.log('every 5 sec save');
   //   // onSaveGame(state);
   // }
-	//
+  //
   // if (elapsedS !== prevSession.elapsedS && elapsedS === 22) {
   //   console.log('time up - to save and exit');
   //   // onSaveAndExitGame(state);
@@ -64,7 +60,7 @@ const updateTime = (pixiGame, delta) => {
   };
 };
 
-const updateState = (pixiGame, delta) => {
+const updateState = (pixiGame, delta, deltaMs) => {
   if (isButtonUp('q')) {
     pixiGame.handlers.onQuit();
     return;
@@ -77,9 +73,10 @@ const updateState = (pixiGame, delta) => {
   const playerSprite = getAsset(player.spriteId);
 
   // 1. Update Actors position
-  updateActors(pixiGame.bullets, delta);
-  updateActors(pixiGame.actors, delta);
-  updateActors(pixiGame.passiveActors, delta);
+  const level = getLevel(pixiGame.levelKey);
+  updateActors(pixiGame.bullets, level, delta, deltaMs);
+  updateActors(pixiGame.actors, level, delta, deltaMs, pixiGame);
+  updateActors(pixiGame.passiveActors, level, delta, deltaMs);
 
   // 2. Handle user interactions (Keyboard / mouse / touch)
   // a) turn thrusters to rotate player
@@ -96,7 +93,9 @@ const updateState = (pixiGame, delta) => {
       updateTexture(player, isHardTurn ? 'hardRight' : 'right');
     }
     // todo: replace hard coded turn speed with settings/data
-    player.data.rotation += turnThruster * 0.1 * delta;
+    player.data.rotation = normalizeDirection(
+      player.data.rotation + turnThruster * 0.1 * delta
+    );
     playerSprite.rotation = player.data.rotation;
   } else {
     updateTexture(player, 'DEFAULT');
@@ -111,13 +110,15 @@ const updateState = (pixiGame, delta) => {
     side: getStrafeThruster(),
   });
 
-  movePlayer(player, delta);
+  updateActorPosition(player, level, delta);
 
   // 3. fire weapon
   const firePower = Math.min(1, getButtonPressedMs(FIRE_ONE) / 500);
   if (isButtonUp(FIRE_ONE)) {
     console.log('Fire', firePower);
-    const newBullet = createActor(world)(generateBulletData(player, firePower));
+    const newBullet = createActor(world)(
+      generateBulletData({ host: player, hostFirePower: firePower })
+    );
     // debugger;
     pixiGame.bullets.push(newBullet);
   }
@@ -163,7 +164,7 @@ const updateState = (pixiGame, delta) => {
   //   world.rotation = 0 - playerSprite.rotation;
   // }
 
-  onUpdateInputs(getAsset(pixiGame.app).ticker.elapsedMS);
+  onUpdateInputs(deltaMs);
 };
 
 const addInitialActors = (pixiGame) => {
@@ -183,23 +184,27 @@ const addInitialActors = (pixiGame) => {
   pixiGame.actors = pixiGame.actors.map(createActor(world));
 
   // Player
-  pixiGame.player = initActor({
+  const player = createActor(world)({
+    team: 'good',
     assetKey: 'spacecraft',
-    overrides: {
-      assetKey: 'spacecraft',
-      x: app.screen.width / 2,
-      y: app.screen.height / 2,
-      rotation: 0,
-      direction: 0,
-      life: 3,
-    },
+    x: app.screen.width / 2,
+    y: app.screen.height / 2,
+    rotation: 0,
+    direction: 0,
   });
 
-  const playerSprite = getAsset(pixiGame.player.spriteId);
-  world.addChild(getAsset(pixiGame.player.circleGraphicId));
-  world.addChild(playerSprite);
+  pixiGame.player = player;
+
+  // Dash - Instruments, radars, dashboard etc
+  const nearestTarget = new Graphics();
+  world.addChild(nearestTarget);
+  pixiGame.dash = {
+    nearestTargetId: setAsset(nearestTarget),
+  };
+
+  // Update world container
   world.position.set(app.screen.width / 2, app.screen.height / 2);
-  world.pivot.copyFrom(playerSprite.position);
+  world.pivot.copyFrom(getAsset(player.spriteId).position);
 };
 
 export const initPixi = ({
@@ -307,15 +312,18 @@ export const initPixi = ({
   window.pixiGame = pixiGame;
 
   const gameLoop = (delta) => {
-    pixiGame.time = updateTime(pixiGame, delta);
-    updateState(pixiGame, delta);
+    const deltaMs = app.ticker.elapsedMS;
+    pixiGame.time = updateTime(pixiGame, delta, deltaMs);
+    updateState(pixiGame, delta, deltaMs);
   };
 
   app.loader.load(() => {
     loadAssets({
       loader: app.loader,
-      assetKeys: ['spacecraft', 'bullet'].concat(
-        getMissionAssetKeys(levelKey, missionKey)
+      assetKeys: uniq(
+        ['spacecraft', 'bullet'].concat(
+          getMissionAssetKeys(levelKey, missionKey)
+        )
       ),
       tileAssetKeys: getTileAssetKeys(levelKey),
     }).then(() => {

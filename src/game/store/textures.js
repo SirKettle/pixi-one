@@ -1,6 +1,6 @@
 import { BaseTexture, Rectangle, Texture } from 'pixi.js';
-import { setAsset } from './pixiAssets';
 import { path, prop } from 'ramda';
+import { getAsset, setAsset } from './pixiAssets';
 import { getSpecs } from '../specs/getSpecs';
 
 const createFrameTexture = (baseTexture, { x, y, width, height }) =>
@@ -42,4 +42,11 @@ export const createTextures = (loader, assetKeys = []) => {
     const texture = new Texture.from(loader.resources[assetKey].url);
     _textures[assetKey] = setAsset(texture);
   });
+};
+
+export const updateTexture = ({ assetKey, spriteId }, textureKey) => {
+  const textureId = getFrameTexture(assetKey, textureKey);
+  if (textureId) {
+    getAsset(spriteId).texture = getAsset(textureId);
+  }
 };
