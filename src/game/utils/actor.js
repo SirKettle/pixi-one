@@ -1,7 +1,13 @@
-import { path, propEq } from 'ramda';
+import { path, pathOr, propEq } from 'ramda';
 import { getAsset } from '../store/pixiAssets';
 import { getSpecs } from '../specs/getSpecs';
-import { getDistance } from './physics';
+import {
+  combineVelocity,
+  getDistance,
+  getVelocity,
+  relativeVelocity,
+} from './physics';
+import { drawCircle } from './graphics';
 
 export const getActorByUid = ({ player, actors, bullets }) => (uid) => {
   if (player.uid === uid) {
@@ -35,4 +41,40 @@ export const sortByNearest = (actor) => (targetA, targetB) => {
   const dA = getDistance(actor.data, targetA.data);
   const dB = getDistance(actor.data, targetB.data);
   return dA > dB ? 1 : -1;
+};
+
+export const getPrecisionHitCircles = (actor) => {
+  const sprite = getAsset(actor.spriteId);
+  const size = Math.max(sprite.width, sprite.height);
+  const specs = getSpecs(actor.assetKey);
+  const precisionHitAreas = pathOr([], ['hitArea', 'precision'])(specs);
+  return precisionHitAreas.map((h) => {
+    return {
+      ...relativeVelocity(
+        actor.data,
+        getVelocity({ speed: h.y * size, direction: actor.data.rotation })
+      ),
+      radius: size * h.radius,
+    };
+  });
+};
+
+export const drawHitCircles = (actor) => {
+  const graphic = getAsset(actor.graphicId);
+
+  drawCircle({
+    graphic,
+    x: actor.data.x,
+    y: actor.data.y,
+    radius: getActorRadius(actor),
+    lineColor: 0xaa8855,
+  });
+
+  getPrecisionHitCircles(actor).forEach((c) => {
+    drawCircle({
+      ...c,
+      graphic,
+      lineColor: 0xaa5555,
+    });
+  });
 };

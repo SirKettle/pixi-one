@@ -8,26 +8,9 @@ import {
 import { getAsset } from '../store/pixiAssets';
 import { generateBulletData } from '../specs/bullets';
 import { applyThrusters, createActor } from './actor';
-import { doEveryMs, getRandomInt } from '../utils/random';
-
-const ORDER = {
-  PATROL: 'PATROL',
-};
-
-const getOrder = (type = ORDER.PATROL) => {
-  if (type === ORDER.PATROL) {
-    return {
-      type: ORDER.PATROL,
-      hostileTeams: ['good'],
-      points: [
-        { x: getRandomInt(-1000, 1000), y: getRandomInt(-1000, 1000) },
-        { x: getRandomInt(-1000, 1000), y: getRandomInt(-1000, 1000) },
-      ],
-      currentPointIndex: 0,
-    };
-  }
-  return;
-};
+import { doEveryMs } from '../utils/random';
+import { getSpecs } from '../specs/getSpecs';
+import { getOrder, ORDER } from '../specs/levels';
 
 const fire = (pixiGame, host) => () => {
   const newBullet = createActor(getAsset(pixiGame.containers.world))(
@@ -41,35 +24,108 @@ const fire = (pixiGame, host) => () => {
 
 export function updateActorAi(pixiGame, actor, delta, deltaMs) {
   if (!path(['data', 'currentOrder'])(actor)) {
-    actor.data.currentOrder = getOrder();
+    actor.data.currentOrder = getOrder({});
   }
-  const currentOrder = path(['data', 'currentOrder'])(actor);
+  const order = path(['data', 'currentOrder'])(actor);
+  const specs = getSpecs(actor.assetKey);
 
-  const { type, hostileTeams, points, currentPointIndex } = currentOrder;
+  const { type, hostileTeams } = order;
+  const potentialTargets = getAllActorsInTeams(pixiGame, hostileTeams);
+
+  const sortedPotentialTargets = potentialTargets.sort(sortByNearest(actor));
+  const nearestTarget = sortedPotentialTargets[0];
 
   if (type === ORDER.PATROL) {
-    const wayPoint = points[currentPointIndex];
-    const potentialTargets = getAllActorsInTeams(pixiGame, hostileTeams);
+    updatePatrol({
+      pixiGame,
+      actor,
+      nearestTarget,
+      order,
+      specs,
+      delta,
+      deltaMs,
+    });
+  }
 
-    const sortedPotentialTargets = potentialTargets.sort(sortByNearest(actor));
-    const nearestTarget = sortedPotentialTargets[0];
+  if (type === ORDER.ATTACK) {
+    updateAttack({
+      pixiGame,
+      actor,
+      nearestTarget,
+      order,
+      specs,
+      delta,
+      deltaMs,
+    });
+  }
+}
 
+function updateAttack({
+  pixiGame,
+  actor,
+  order,
+  specs,
+  delta,
+  deltaMs,
+  nearestTarget,
+}) {
+  if (nearestTarget) {
     const targetInfo = getTargetInfo(actor, nearestTarget.data);
 
-    if (targetInfo.inRange) {
+    if (targetInfo.inRadarRange) {
+      if (targetInfo.inCloseRange) {
+        doEveryMs(fire(pixiGame, actor), deltaMs, 1000);
+        turnTowards(actor, nearestTarget.data, specs, delta);
+      } else {
+        moveTowards(actor, nearestTarget.data, targetInfo, specs, delta);
+      }
+      return;
+    }
+  }
+  console.log('switch order to patrol');
+  order.type = ORDER.PATROL;
+}
+
+function updatePatrol({
+  pixiGame,
+  actor,
+  order,
+  specs,
+  delta,
+  deltaMs,
+  nearestTarget,
+}) {
+  const { points, currentPointIndex } = order;
+
+  const wayPoint = points[currentPointIndex];
+
+  if (nearestTarget) {
+    const targetInfo = getTargetInfo(actor, nearestTarget.data);
+    if (
+      targetInfo.inRadarRange &&
+      actor.assetKey !== 'starDestroyer'
+      // && actor.assetKey !== 'tCraft'
+    ) {
       //  attack player or maybe follow player then attack?
 
-      if (targetInfo.inFiringRange) {
-        doEveryMs(fire(pixiGame, actor), deltaMs, 1000);
-        turnTowards(actor, nearestTarget.data, delta);
-      } else {
-        // console.log('targetInRange', targetInfo.distance);
-        moveTowards(actor, nearestTarget.data, targetInfo, delta);
+      order.type = ORDER.ATTACK;
+      console.log('switch order to Attack');
+      return;
+    }
+  }
+
+  // move to wayPoint
+  // console.log('move to wayPoint');
+  const wayPointTargetInfo = getTargetInfo(actor, wayPoint);
+  moveTowards(actor, wayPoint, wayPointTargetInfo, specs, delta);
+
+  // move to the main update? or split patrol and attack
+  if (wayPointTargetInfo.inCloseRange) {
+    if (order.type === ORDER.PATROL) {
+      order.currentPointIndex += 1;
+      if (!order.points[order.currentPointIndex]) {
+        order.currentPointIndex = 0;
       }
-    } else {
-      // move to wayPoint
-      // console.log('move to wayPoint');
-      moveTowards(actor, wayPoint, getTargetInfo(actor, wayPoint), delta);
     }
   }
 }
@@ -84,11 +140,14 @@ function shouldTurnLeft(rotationChange) {
   return false;
 }
 
-function turnTowards(actor, vTarget, delta) {
+function turnTowards(actor, vTarget, specs, delta) {
   const sprite = getAsset(actor.spriteId);
   const targetDirection = getDirection(actor.data, vTarget);
   const rotationChange = targetDirection - actor.data.rotation;
-  const turnBy = Math.min(1, Math.abs(rotationChange));
+  const turnBy = Math.min(
+    1,
+    Math.abs(rotationChange) * pathOr(1, ['thrust', 'turn'])(specs)
+  );
   const turningLeft = shouldTurnLeft(rotationChange);
   const adjTurnBy = turningLeft ? -turnBy : turnBy;
 
@@ -98,36 +157,24 @@ function turnTowards(actor, vTarget, delta) {
   sprite.rotation = actor.data.rotation;
 }
 
-function moveTowards(actor, vTarget, targetInfo, delta) {
-  turnTowards(actor, vTarget, delta);
+function moveTowards(actor, vTarget, targetInfo, specs, delta) {
+  turnTowards(actor, vTarget, specs, delta);
   const { currentOrder } = actor.data;
 
   applyThrusters({
     actor,
     delta,
     thrustDirection: 'forward',
-    forward: 0.3,
+    forward: 0.75 * pathOr(0.1, ['thrust', 'forward'])(specs),
   });
-
-  // move to the main update? or split patrol and attack
-  if (targetInfo.inFiringRange) {
-    if (currentOrder.type === ORDER.PATROL) {
-      currentOrder.currentPointIndex += 1;
-      if (!currentOrder.points[currentOrder.currentPointIndex]) {
-        currentOrder.currentPointIndex = 0;
-      }
-    }
-  }
 }
 
 function getTargetInfo(actor, targetData) {
   const distance = targetData ? getDistance(actor.data, targetData) : undefined;
 
   return {
-    inRange: distance ? distance < 500 : false,
-    inFiringRange: distance ? distance < 300 : false,
+    inRadarRange: distance ? distance < 500 : false,
+    inCloseRange: distance ? distance < 300 : false,
     distance,
   };
 }
-
-// function patrol(pixiGame, actor, deltaMs)

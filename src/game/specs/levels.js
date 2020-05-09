@@ -1,6 +1,30 @@
 import { path, pathOr, prop, propEq, propOr, times, uniq } from 'ramda';
 import { getRandomInt } from '../utils/random';
 
+export const ORDER = {
+  PATROL: 'PATROL',
+  ATTACK: 'ATTACK',
+};
+
+export const getRandomPoints = (num = 2) =>
+  times(() => ({
+    x: getRandomInt(-1000, 1000),
+    y: getRandomInt(-1000, 1000),
+  }))(num);
+
+export const getOrder = ({
+  type = ORDER.PATROL,
+  hostileTeams = ['good'],
+  points = getRandomPoints(),
+}) => {
+  return {
+    type,
+    hostileTeams,
+    points,
+    currentPointIndex: 0,
+  };
+};
+
 export const levels = [
   {
     key: 'space_1',
@@ -57,6 +81,7 @@ export const levels = [
       // },
     ],
     atmosphere: 0.05, // space 0 - solid 1?? maybe air would be 0.2, water 0.4??
+    // atmosphere: 0.05, // space 0 - solid 1?? maybe air would be 0.2, water 0.4??
     missions: [
       {
         key: 'm1',
@@ -65,67 +90,98 @@ export const levels = [
         isComplete: (game) => game.actors.length === 0,
         isFail: (game) => isPlayerDead(game) || isTimeUp(game),
         actors: [
-          {
-            assetKey: 'planetGreen',
-            x: 100,
-            y: 25,
-            rotationSpeed: -0.01,
-            velocity: {
-              x: 1,
-              y: 2,
-            },
-          },
-          {
-            assetKey: 'planetSandy',
-            x: 25,
-            y: 300,
-            rotationSpeed: 0.025,
-          },
+          // {
+          //   assetKey: 'planetGreen',
+          //   x: 100,
+          //   y: 25,
+          //   rotationSpeed: -0.01,
+          //   velocity: {
+          //     x: 1,
+          //     y: 2,
+          //   },
+          // },
+          // {
+          //   assetKey: 'planetSandy',
+          //   x: 25,
+          //   y: 300,
+          //   rotationSpeed: 0.025,
+          // },
+          // {
+          //   team: 'bad',
+          //   assetKey: 'tCraft',
+          //   ai: true,
+          //   x: 725,
+          //   y: 800,
+          //   velocity: {
+          //     x: -1,
+          //     y: -1,
+          //   },
+          // },
+          // {
+          //   team: 'bad',
+          //   assetKey: 'spacecraft',
+          //   ai: true,
+          //   x: 100,
+          //   y: 100,
+          //   rotationSpeed: 0.025,
+          //   velocity: {
+          //     x: -1,
+          //     y: -1,
+          //   },
+          // },
+          // {
+          //   team: 'bad',
+          //   assetKey: 'tCraft',
+          //   ai: true,
+          //   x: 600,
+          //   y: 800,
+          //   velocity: {
+          //     x: -1.2,
+          //     y: -1,
+          //   },
+          // },
           {
             team: 'bad',
-            assetKey: 'tCraft',
+            assetKey: 'starDestroyer',
+            // assetKey: 'tCraft',
             ai: true,
-            x: 725,
-            y: 800,
-            velocity: {
-              x: -1,
-              y: -1,
-            },
-          },
-          {
-            team: 'bad',
-            assetKey: 'spacecraft',
-            ai: true,
-            x: 100,
-            y: 100,
-            rotationSpeed: 0.025,
-            velocity: {
-              x: -1,
-              y: -1,
-            },
-          },
-          {
-            team: 'bad',
-            assetKey: 'tCraft',
-            ai: true,
-            x: 600,
-            y: 800,
-            velocity: {
-              x: -1.2,
-              y: -1,
-            },
-          },
-          {
-            team: 'bad',
-            assetKey: 'tCraft',
-            ai: true,
-            x: 705,
-            y: 820,
-            life: 15,
+            x: 1000,
+            y: 1000,
+            life: 1000,
             velocity: {
               x: -1,
               y: -1.5,
             },
+            currentOrder: getOrder({
+              type: ORDER.PATROL,
+              points: [
+                { x: 800, y: 600 },
+                { x: 50, y: 400 },
+                { x: 450, y: 50 },
+              ],
+            }),
+          },
+          {
+            team: 'good',
+            assetKey: 'tantiveIV',
+            // assetKey: 'tCraft',
+            ai: true,
+            x: 0,
+            y: 0,
+            life: 1000,
+            velocity: {
+              x: -1,
+              y: -1.5,
+            },
+            currentOrder: getOrder({
+              type: ORDER.PATROL,
+              hostileTeams: ['bad'],
+              points: [
+                { x: 100, y: 600 },
+                { x: 750, y: 400 },
+                { x: 450, y: 200 },
+              ],
+            }),
           },
         ].concat(
           times(() => ({
@@ -138,7 +194,34 @@ export const levels = [
               x: -1.2,
               y: -1,
             },
-          }))(getRandomInt(10, 20))
+          }))(getRandomInt(15, 20)),
+          times(() => ({
+            team: 'good',
+            assetKey: 'spacecraft',
+            ai: true,
+            x: getRandomInt(-2000, 2000),
+            y: getRandomInt(-2000, 2000),
+            velocity: {
+              x: -1.2,
+              y: -1,
+            },
+          }))(getRandomInt(10, 12)),
+          times(() => ({
+            team: 'good',
+            assetKey: 'xWing',
+            ai: true,
+            x: getRandomInt(-2000, 2000),
+            y: getRandomInt(-2000, 2000),
+            currentOrder: getOrder({
+              type: ORDER.PATROL,
+              hostileTeams: ['bad'],
+              points: [
+                { x: 100, y: 600 },
+                { x: 750, y: 400 },
+                { x: 450, y: 200 },
+              ],
+            }),
+          }))(getRandomInt(12, 20))
         ),
         passiveActors: [
           {

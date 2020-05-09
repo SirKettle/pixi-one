@@ -1,4 +1,10 @@
-import { spacecraft, tCraft } from './spacecraft';
+import {
+  spacecraft,
+  starDestroyer,
+  tantiveIV,
+  tCraft,
+  xWing,
+} from './spacecraft';
 import { green as planetGreen, sandy as planetSandy, starSun } from './planets';
 import { bullet } from './bullets';
 import { grid128, grid64, starsOne } from './tiles';
@@ -9,6 +15,12 @@ export const getSpecs = (key) => {
       return spacecraft;
     case 'tCraft':
       return tCraft;
+    case 'starDestroyer':
+      return starDestroyer;
+    case 'xWing':
+      return xWing;
+    case 'tantiveIV':
+      return tantiveIV;
     case 'starSun':
       return starSun;
     case 'planetGreen':

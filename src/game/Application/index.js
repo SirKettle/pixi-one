@@ -1,5 +1,5 @@
-import { Application, Container, Graphics } from 'pixi.js';
-import { pick, prop, uniq } from 'ramda';
+import { Application, BitmapText, Container, Graphics } from 'pixi.js';
+import { path, pathOr, pick, prop, uniq } from 'ramda';
 
 import { getAsset, setAsset } from '../store/pixiAssets';
 import {
@@ -35,16 +35,25 @@ import {
 } from './actor';
 import { getSpriteRadius } from '../utils/actor';
 import { normalizeDirection } from '../utils/physics';
+import { drawCircle } from '../utils/graphics';
+import { getSpecs } from '../specs/getSpecs';
 
-const updateTime = (pixiGame, delta, deltaMs) => {
+import displaydashFont from '../../assets/font/displaydash.xml';
+
+const updateTime = (pixiGame, delta, deltaMs, ticker) => {
   const prevSession = pixiGame.time.session;
   const elapsedMs = prevSession.elapsedMs + deltaMs;
   const elapsedS = Math.floor(elapsedMs / 1000);
 
-  // if (elapsedS !== prevSession.elapsedS && elapsedS % 5 === 0) {
-  //   console.log('every 5 sec save');
-  //   // onSaveGame(state);
-  // }
+  if (elapsedS !== prevSession.elapsedS) {
+    // onSaveGame(state);
+  }
+  pixiGame.dashboardDisplayText.text = `
+    Mission time: ${elapsedS}
+    
+    deltaMs: ${Math.floor(deltaMs)}
+    
+    FPS: ${Math.floor(ticker.FPS)}`;
   //
   // if (elapsedS !== prevSession.elapsedS && elapsedS === 22) {
   //   console.log('time up - to save and exit');
@@ -65,18 +74,22 @@ const updateState = (pixiGame, delta, deltaMs) => {
     pixiGame.handlers.onQuit();
     return;
   }
+  if (isButtonUp('d')) {
+    pixiGame.isDebugMode = !pixiGame.isDebugMode;
+  }
 
   const sinVariant =
     (1 + Math.sin(pixiGame.time.session.elapsedMs / 100)) * 0.5;
   const world = getAsset(pixiGame.containers.world);
   const player = pixiGame.player;
+  const playerSpecs = getSpecs(player.assetKey);
   const playerSprite = getAsset(player.spriteId);
 
   // 1. Update Actors position
   const level = getLevel(pixiGame.levelKey);
-  updateActors(pixiGame.bullets, level, delta, deltaMs);
+  updateActors(pixiGame.bullets, level, delta, deltaMs, pixiGame);
   updateActors(pixiGame.actors, level, delta, deltaMs, pixiGame);
-  updateActors(pixiGame.passiveActors, level, delta, deltaMs);
+  updateActors(pixiGame.passiveActors, level, delta, deltaMs, pixiGame);
 
   // 2. Handle user interactions (Keyboard / mouse / touch)
   // a) turn thrusters to rotate player
@@ -94,7 +107,8 @@ const updateState = (pixiGame, delta, deltaMs) => {
     }
     // todo: replace hard coded turn speed with settings/data
     player.data.rotation = normalizeDirection(
-      player.data.rotation + turnThruster * 0.1 * delta
+      player.data.rotation +
+        turnThruster * 0.1 * delta * pathOr(1, ['thrust', 'turn'])(playerSpecs)
     );
     playerSprite.rotation = player.data.rotation;
   } else {
@@ -137,17 +151,16 @@ const updateState = (pixiGame, delta, deltaMs) => {
 
   const spriteRadius = getSpriteRadius(playerSprite);
   const lineWidth = firePower * spriteRadius + sinVariant * 5;
-  const circleGraphic = getAsset(player.circleGraphicId);
 
-  circleGraphic.clear();
-  circleGraphic.lineStyle(lineWidth, 0x00aaff, firePower * 0.3);
-  circleGraphic.beginFill(0xffffff, 0);
-  circleGraphic.drawCircle(
-    player.data.x,
-    player.data.y,
-    spriteRadius * 1.6 + lineWidth - sinVariant
-  );
-  circleGraphic.endFill();
+  drawCircle({
+    graphicId: player.graphicId,
+    lineWidth,
+    lineColor: 0x00aaff,
+    lineAlpha: firePower * 0.3,
+    x: path(['data', 'x'])(player),
+    y: path(['data', 'y'])(player),
+    radius: spriteRadius * 1.6 + lineWidth - sinVariant,
+  });
 
   // 6. Move camera to follow Player
   world.pivot.x = player.data.x;
@@ -180,18 +193,37 @@ const addInitialActors = (pixiGame) => {
 
   // Add tiles and actors
   pixiGame.tiles = pixiGame.tiles.map(createTile(app, background));
+
+  pixiGame.dashboardDisplayText = new BitmapText('', {
+    font: '20px Digital-7 Mono',
+    align: 'left',
+  });
+
+  pixiGame.dashboardDisplayText.x = 25;
+  pixiGame.dashboardDisplayText.y = 25;
+
+  background.addChild(pixiGame.dashboardDisplayText);
+
   pixiGame.passiveActors = pixiGame.passiveActors.map(createActor(world));
   pixiGame.actors = pixiGame.actors.map(createActor(world));
 
   // Player
   const player = createActor(world)({
     team: 'good',
-    assetKey: 'spacecraft',
+    assetKey: 'xWing',
     x: app.screen.width / 2,
     y: app.screen.height / 2,
     rotation: 0,
     direction: 0,
   });
+  // const player = createActor(world)({
+  //   team: 'bad',
+  //   assetKey: 'tCraft',
+  //   x: app.screen.width / 2,
+  //   y: app.screen.height / 2,
+  //   rotation: 0,
+  //   direction: 0,
+  // });
 
   pixiGame.player = player;
 
@@ -252,8 +284,8 @@ export const initPixi = ({
   const level = getLevel(levelKey);
   const mission = level.missions[0];
   const missionKey = mission.key;
-  const actors = mission.actors;
-  const passiveActors = mission.passiveActors;
+  const actors = mission.actors || [];
+  const passiveActors = mission.passiveActors || [];
   // }
 
   // const
@@ -263,6 +295,7 @@ export const initPixi = ({
   // }
 
   const pixiGame = {
+    isDebugMode: false,
     id: gameState.id,
     name: gameState.name,
     app: setAsset(app),
@@ -313,9 +346,11 @@ export const initPixi = ({
 
   const gameLoop = (delta) => {
     const deltaMs = app.ticker.elapsedMS;
-    pixiGame.time = updateTime(pixiGame, delta, deltaMs);
+    pixiGame.time = updateTime(pixiGame, delta, deltaMs, app.ticker);
     updateState(pixiGame, delta, deltaMs);
   };
+
+  app.loader.add('dashfont', displaydashFont);
 
   app.loader.load(() => {
     loadAssets({

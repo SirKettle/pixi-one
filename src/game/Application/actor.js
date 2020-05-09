@@ -11,6 +11,7 @@ import {
   normalizeDirection,
 } from '../utils/physics';
 import { updateActorAi } from './ai';
+import { drawHitCircles } from '../utils/actor';
 
 export const createTile = (app, container) => (tile) => {
   const { screen } = app;
@@ -54,7 +55,7 @@ export const initActor = ({ assetKey, overrides = {}, uid }) => {
     assetKey,
     data,
     spriteId: setAsset(sprite),
-    circleGraphicId: setAsset(new Graphics()), // hmmm
+    graphicId: setAsset(new Graphics()), // hmmm
   };
 };
 
@@ -67,8 +68,8 @@ export const createActor = (container) => (data) => {
     },
   });
   container.addChild(getAsset(actor.spriteId));
-  if (actor.circleGraphicId) {
-    container.addChild(getAsset(actor.circleGraphicId));
+  if (actor.graphicId) {
+    container.addChild(getAsset(actor.graphicId));
   }
   return actor;
 };
@@ -125,12 +126,18 @@ export const updateTilePosition = ({ data, spriteId, offsetPoint }) => {
 
 export const updateActors = (actors, level, delta, deltaMs, pixiGame) => {
   actors.forEach((actor, index) => {
-    const { data, spriteId } = actor;
+    const { data, graphicId, spriteId } = actor;
+    getAsset(graphicId).clear();
+
     if (data.ai) {
       updateActorAi(pixiGame, actor, delta, deltaMs);
     }
 
     updateActorPosition(actor, level, delta);
+
+    if (pixiGame.isDebugMode) {
+      drawHitCircles(actor);
+    }
 
     const sprite = getAsset(spriteId);
     sprite.scale.set(data.scale || 1);
@@ -143,6 +150,7 @@ export const updateActors = (actors, level, delta, deltaMs, pixiGame) => {
     if (data.life <= 0) {
       actors.splice(index, 1);
       removeAsset(spriteId);
+      removeAsset(graphicId);
     }
   });
 };
@@ -150,7 +158,7 @@ export const updateActors = (actors, level, delta, deltaMs, pixiGame) => {
 export const applyThrusters = ({ actor, delta, forward = 0, side = 0 }) => {
   if (forward !== 0) {
     const specs = getSpecs(actor.assetKey);
-    const thrust = pathOr(0.1, ['thrust', 'forward'])(specs);
+    const thrust = pathOr(0.1, ['thrust', 'forward'])(specs) * 0.2;
     const thrustVelocity = getVelocity({
       speed: thrust * delta * forward,
       direction: actor.data.rotation,
