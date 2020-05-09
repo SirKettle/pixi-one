@@ -1,2 +1,7 @@
 /node_modules
+/dist
+/_art
+
+yarn.lock
+
 .idea
