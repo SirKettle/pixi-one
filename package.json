@@ -1,6 +1,6 @@
 {
   "name": "pixi-one",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "My first pixi game",
   "main": "src/index.js",
   "license": "MIT",
