@@ -43,11 +43,9 @@ export const sortByNearest = (actor) => (targetA, targetB) => {
   return dA > dB ? 1 : -1;
 };
 
-export const getPrecisionHitCircles = (actor) => {
-  const sprite = getAsset(actor.spriteId);
-  const size = Math.max(sprite.width, sprite.height);
-  const specs = getSpecs(actor.assetKey);
-  const precisionHitAreas = pathOr([], ['hitArea', 'precision'])(specs);
+export function getPrecisionHitCircles(actor) {
+  const { radiusPx, precisionHitAreas } = actor.performance;
+  const size = radiusPx * 2;
   return precisionHitAreas.map((h) => {
     return {
       ...relativeVelocity(
@@ -57,7 +55,7 @@ export const getPrecisionHitCircles = (actor) => {
       radius: size * h.radius,
     };
   });
-};
+}
 
 export const drawHitCircles = (actor) => {
   const graphic = getAsset(actor.graphicId);

@@ -20,6 +20,7 @@ export const spacecraft = {
       x: 0.5,
       y: 0.5,
       radius: 0.5,
+      radiusPx: 16,
     },
     // we can extend this to use more specific hit areas with levels percentage of life?
     // we can extend this to depend on the current frame/texture?
@@ -52,6 +53,7 @@ export const tCraft = {
     basic: {
       x: 0.5,
       y: 0.5,
+      radiusPx: 16,
       radius: 0.5,
     },
     // we can extend this to use more specific hit areas with levels percentage of life?
@@ -64,9 +66,7 @@ export const tCraft = {
     fuelCapacity: 100,
   },
   imageUrl: tCraftImage,
-  frames: [
-    { key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 32, 32) },
-  ],
+  frames: [{ key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 32, 32) }],
 };
 
 export const xWing = {
@@ -81,6 +81,7 @@ export const xWing = {
     basic: {
       x: 0.5,
       y: 0.5,
+      radiusPx: 24,
       radius: 0.5,
     },
     // we can extend this to use more specific hit areas with levels percentage of life?
@@ -93,9 +94,7 @@ export const xWing = {
     fuelCapacity: 100,
   },
   imageUrl: xWingImage,
-  frames: [
-    { key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 48, 48) },
-  ],
+  frames: [{ key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 48, 48) }],
 };
 
 export const starDestroyer = {
@@ -110,6 +109,7 @@ export const starDestroyer = {
     basic: {
       x: 0.5,
       y: 0.5,
+      radiusPx: 128,
       radius: 0.5,
     },
     precision: [
@@ -164,7 +164,7 @@ export const starDestroyer = {
   },
   initialData: {
     shield: 1,
-    life: 200,
+    life: 500,
     mass: 500,
     fuelCapacity: 100,
   },
@@ -179,16 +179,17 @@ export const starDestroyer = {
 
 export const tantiveIV = {
   thrust: {
-    forward: 0.25,
+    forward: 0.35,
     reverse: 0.1,
     side: 0.05,
-    turn: 0.3,
+    turn: 0.23,
   },
   // because of scale - x is percentage of width, y of height, radius of width
   hitArea: {
     basic: {
       x: 0.5,
       y: 0.5,
+      radiusPx: 127,
       radius: 0.5,
     },
     precision: [
@@ -243,7 +244,7 @@ export const tantiveIV = {
   },
   initialData: {
     shield: 1,
-    life: 200,
+    life: 500,
     mass: 500,
     fuelCapacity: 100,
   },

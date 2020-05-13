@@ -7,11 +7,12 @@ import { getSpecs } from '../specs/getSpecs';
 import {
   combineVelocity,
   defaultVector,
+  getDistance,
   getVelocity,
   normalizeDirection,
 } from '../utils/physics';
 import { updateActorAi } from './ai';
-import { drawHitCircles } from '../utils/actor';
+import { drawHitCircles, getActorRadius } from '../utils/actor';
 
 export const createTile = (app, container) => (tile) => {
   const { screen } = app;
@@ -40,7 +41,6 @@ export const initActor = ({ assetKey, overrides = {}, uid }) => {
       x: 0,
       y: 0,
     },
-    collisionBlacklist: [],
     ...prop('initialData')(getSpecs(assetKey)),
     ...overrides,
   };
@@ -71,14 +71,20 @@ export const createActor = (container) => (data) => {
   if (actor.graphicId) {
     container.addChild(getAsset(actor.graphicId));
   }
+  const specs = getSpecs(assetKey);
+  actor.performance = {
+    radiusPx: getActorRadius(actor),
+    precisionHitAreas: pathOr([], ['hitArea', 'precision'])(specs),
+  };
   return actor;
 };
 
 const MAX_ATMOSPHERE_DRAG = 0.1;
 
-export const atmosphereDragFactor = ({ delta, level, isBullet = false }) => {
+export const atmosphereDragFactor = ({ delta, level, isBullet = false, factor = 1 }) => {
   const drag = MAX_ATMOSPHERE_DRAG * delta * propOr(0, 'atmosphere')(level);
-  return 1 - (isBullet ? drag * 0.3 : drag);
+  const adjDrag = isBullet ? 0.3 : factor;
+  return 1 - drag * adjDrag;
 };
 
 export const applyAtmosphereToVelocity = ({ data, delta, level }) => {
@@ -89,7 +95,7 @@ export const applyAtmosphereToVelocity = ({ data, delta, level }) => {
   });
   return {
     x: path(['velocity', 'x'])(data) * dragFactor,
-    y: path(['velocity', 'y'])(data) * dragFactor,
+    y: path(['velocity', 'y'])(data) * dragFactor + propOr(0, 'gravity')(level),
   };
 };
 
@@ -107,22 +113,24 @@ export const updateActorPosition = ({ data, spriteId }, level, delta) => {
   sprite.position.set(data.x, data.y);
 
   if (data.rotationSpeed) {
-    data.rotationSpeed =
-      data.rotationSpeed * atmosphereDragFactor({ delta, level });
-    data.rotation = normalizeDirection(
-      (data.rotation || 0) + data.rotationSpeed * delta
-    );
+    data.rotationSpeed = data.rotationSpeed * atmosphereDragFactor({ delta, level, factor: 0 });
+    data.rotation = normalizeDirection((data.rotation || 0) + data.rotationSpeed * delta);
     sprite.rotation = data.rotation;
   }
 };
 
-export const updateTilePosition = ({ data, spriteId, offsetPoint }) => {
+export const updateTilePosition = (offsetPoint) => ({ data, spriteId }) => {
   const parallaxFactor = propOr(1, 'parallax')(data) / propOr(1, 'scale')(data);
   getAsset(spriteId).tilePosition.set(
     -offsetPoint.x * parallaxFactor,
     -offsetPoint.y * parallaxFactor
   );
 };
+
+export function updateTiles(tiles, offsetPoint) {
+  const updateFunc = updateTilePosition(offsetPoint);
+  tiles.forEach(updateFunc);
+}
 
 export const updateActors = (actors, level, delta, deltaMs, pixiGame) => {
   actors.forEach((actor, index) => {
@@ -135,7 +143,7 @@ export const updateActors = (actors, level, delta, deltaMs, pixiGame) => {
 
     updateActorPosition(actor, level, delta);
 
-    if (pixiGame.isDebugMode) {
+    if (pixiGame.isDebugCollsionMode) {
       drawHitCircles(actor);
     }
 
@@ -145,6 +153,8 @@ export const updateActors = (actors, level, delta, deltaMs, pixiGame) => {
     if (data.isBullet) {
       data.life -= delta * 0.1;
       sprite.alpha = data.life;
+    } else {
+      data.distanceFromCenter = getDistance(pixiGame.player.data, data);
     }
 
     if (data.life <= 0) {
@@ -165,10 +175,7 @@ export const applyThrusters = ({ actor, delta, forward = 0, side = 0 }) => {
     });
 
     if (thrustVelocity) {
-      actor.data.velocity = combineVelocity(
-        actor.data.velocity,
-        thrustVelocity
-      );
+      actor.data.velocity = combineVelocity(actor.data.velocity, thrustVelocity);
     }
   }
   if (side !== 0) {
@@ -180,10 +187,7 @@ export const applyThrusters = ({ actor, delta, forward = 0, side = 0 }) => {
     });
 
     if (thrustVelocity) {
-      actor.data.velocity = combineVelocity(
-        actor.data.velocity,
-        thrustVelocity
-      );
+      actor.data.velocity = combineVelocity(actor.data.velocity, thrustVelocity);
     }
   }
 };

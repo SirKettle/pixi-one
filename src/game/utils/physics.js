@@ -1,19 +1,25 @@
-export const getVelocity = ({ speed = 0, direction = 0 }) => ({
-  x: Math.sin(direction) * speed,
-  y: -(Math.cos(direction) * speed),
-});
+export function getVelocity({ speed = 0, direction = 0 }) {
+  return {
+    x: Math.sin(direction) * speed,
+    y: -(Math.cos(direction) * speed),
+  };
+}
 
 export const defaultVector = { x: 0, y: 0 };
 
-export const relativeVelocity = (vA = defaultVector, vB = defaultVector) => ({
-  x: vA.x - vB.x,
-  y: vA.y - vB.y,
-});
+export function relativeVelocity(vA = defaultVector, vB = defaultVector) {
+  return {
+    x: vA.x - vB.x,
+    y: vA.y - vB.y,
+  };
+}
 
-export const combineVelocity = (vA = defaultVector, vB = defaultVector) => ({
-  x: vA.x + vB.x,
-  y: vA.y + vB.y,
-});
+export function combineVelocity(vA = defaultVector, vB = defaultVector) {
+  return {
+    x: vA.x + vB.x,
+    y: vA.y + vB.y,
+  };
+}
 
 export function getCollisionNorm(
   vActorAPosition = defaultVector,

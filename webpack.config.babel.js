@@ -36,7 +36,7 @@ export default (env, argv) => {
           },
         },
         {
-          test: /\.(png|svg|jpg|gif)$/,
+          test: /\.(png|svg|jpg|jpeg|gif)$/,
           exclude: /node_modules/,
           use: {
             loader: 'file-loader',
@@ -51,6 +51,13 @@ export default (env, argv) => {
         },
         {
           test: /\.(fnt|xml|json)$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'file-loader',
+          },
+        },
+        {
+          test: /\.(ogg|wav|mp3)$/,
           exclude: /node_modules/,
           use: {
             loader: 'file-loader',

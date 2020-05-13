@@ -48,6 +48,6 @@ export const generateBulletData = ({
     mass: hostFirePower * 10,
     power: hostFirePower * 50,
     scale: 0.25 + hostFirePower * 0.75,
-    collisionBlacklist: [host.uid],
+    noCollisionWith: host.uid,
   };
 };

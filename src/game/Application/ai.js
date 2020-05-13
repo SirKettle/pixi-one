@@ -1,24 +1,28 @@
 import { path, pathOr } from 'ramda';
 import { getAllActorsInTeams, sortByNearest } from '../utils/actor';
-import {
-  getDirection,
-  getDistance,
-  normalizeDirection,
-} from '../utils/physics';
+import { getDirection, getDistance, normalizeDirection } from '../utils/physics';
 import { getAsset } from '../store/pixiAssets';
 import { generateBulletData } from '../specs/bullets';
 import { applyThrusters, createActor } from './actor';
 import { doEveryMs } from '../utils/random';
 import { getSpecs } from '../specs/getSpecs';
-import { getOrder, ORDER } from '../specs/levels';
+import { getOrder, ORDER } from '../utils/mission';
+import { AUDIO_RANGE_PX, play as playAudio } from '../utils/audio';
 
 const fire = (pixiGame, host) => () => {
+  const hostFirePower = Math.max(0, Math.min(1, pathOr(0.5, ['data', 'firePower'])(host)));
   const newBullet = createActor(getAsset(pixiGame.containers.world))(
     generateBulletData({
       host,
-      hostFirePower: pathOr(0.5, ['data', 'firePower'])(host),
+      hostFirePower,
     })
   );
+
+  if (host.data.distanceFromCenter < AUDIO_RANGE_PX) {
+    const vol = (hostFirePower * (AUDIO_RANGE_PX - host.data.distanceFromCenter)) / AUDIO_RANGE_PX;
+    playAudio('laser', vol);
+  }
+
   pixiGame.bullets.push(newBullet);
 };
 
@@ -29,8 +33,8 @@ export function updateActorAi(pixiGame, actor, delta, deltaMs) {
   const order = path(['data', 'currentOrder'])(actor);
   const specs = getSpecs(actor.assetKey);
 
-  const { type, hostileTeams } = order;
-  const potentialTargets = getAllActorsInTeams(pixiGame, hostileTeams);
+  const { type } = order;
+  const potentialTargets = getAllActorsInTeams(pixiGame,  path(['data', 'hostileTeams'])(actor));
 
   const sortedPotentialTargets = potentialTargets.sort(sortByNearest(actor));
   const nearestTarget = sortedPotentialTargets[0];
@@ -60,15 +64,7 @@ export function updateActorAi(pixiGame, actor, delta, deltaMs) {
   }
 }
 
-function updateAttack({
-  pixiGame,
-  actor,
-  order,
-  specs,
-  delta,
-  deltaMs,
-  nearestTarget,
-}) {
+function updateAttack({ pixiGame, actor, order, specs, delta, deltaMs, nearestTarget }) {
   if (nearestTarget) {
     const targetInfo = getTargetInfo(actor, nearestTarget.data);
 
@@ -82,19 +78,11 @@ function updateAttack({
       return;
     }
   }
-  console.log('switch order to patrol');
+  // console.log('switch order to patrol');
   order.type = ORDER.PATROL;
 }
 
-function updatePatrol({
-  pixiGame,
-  actor,
-  order,
-  specs,
-  delta,
-  deltaMs,
-  nearestTarget,
-}) {
+function updatePatrol({ pixiGame, actor, order, specs, delta, deltaMs, nearestTarget }) {
   const { points, currentPointIndex } = order;
 
   const wayPoint = points[currentPointIndex];
@@ -109,7 +97,7 @@ function updatePatrol({
       //  attack player or maybe follow player then attack?
 
       order.type = ORDER.ATTACK;
-      console.log('switch order to Attack');
+      // console.log('switch order to Attack');
       return;
     }
   }
@@ -144,16 +132,11 @@ function turnTowards(actor, vTarget, specs, delta) {
   const sprite = getAsset(actor.spriteId);
   const targetDirection = getDirection(actor.data, vTarget);
   const rotationChange = targetDirection - actor.data.rotation;
-  const turnBy = Math.min(
-    1,
-    Math.abs(rotationChange) * pathOr(1, ['thrust', 'turn'])(specs)
-  );
+  const turnBy = Math.min(1, Math.abs(rotationChange) * pathOr(1, ['thrust', 'turn'])(specs));
   const turningLeft = shouldTurnLeft(rotationChange);
   const adjTurnBy = turningLeft ? -turnBy : turnBy;
 
-  actor.data.rotation = normalizeDirection(
-    actor.data.rotation + adjTurnBy * delta * 0.1
-  );
+  actor.data.rotation = normalizeDirection(actor.data.rotation + adjTurnBy * delta * 0.1);
   sprite.rotation = actor.data.rotation;
 }
 

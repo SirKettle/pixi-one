@@ -1,9 +1,6 @@
-import { compose, path, pathOr, pick, uniq, unnest } from 'ramda';
-import {
-  getCollisionNorm,
-  getCollisionSpeed,
-  relativeVelocity,
-} from '../utils/physics';
+import { compose, path, pathEq, pathOr, pick, uniq, unnest } from 'ramda';
+import { AUDIO_RANGE_PX, play as playAudio } from '../utils/audio';
+import { getCollisionNorm, getCollisionSpeed, relativeVelocity } from '../utils/physics';
 import {
   getActorByUid,
   getActorRadius,
@@ -16,98 +13,141 @@ import { getSpecs } from '../specs/getSpecs';
 
 export const circleIntersect = (c1, c2) => {
   // Calculate the distance between the two circles
-  const squareDistance =
-    (c1.x - c2.x) * (c1.x - c2.x) + (c1.y - c2.y) * (c1.y - c2.y);
+  const squareDistance = (c1.x - c2.x) * (c1.x - c2.x) + (c1.y - c2.y) * (c1.y - c2.y);
 
   // When the distance is smaller or equal to the sum
   // of the two radius, the circles touch or overlap
   return squareDistance <= (c1.radius + c2.radius) * (c1.radius + c2.radius);
 };
 
-const getActorBasicCircle = (actor) => ({
-  x: path(['data', 'x'])(actor),
-  y: path(['data', 'y'])(actor),
-  radius: getActorRadius(actor),
-});
+function getActorBasicCircle(actor) {
+  return {
+    x: actor.data.x,
+    y: actor.data.y,
+    radius: actor.performance.radiusPx,
+  };
+}
 
-export const isSpriteCircleIntersect = (actor1, actor2) => {
-  return circleIntersect(
-    getActorBasicCircle(actor1),
-    getActorBasicCircle(actor2)
-  );
-};
+export function isSpriteCircleIntersect(actor1, actor2) {
+  return circleIntersect(getActorBasicCircle(actor1), getActorBasicCircle(actor2));
+}
 
-export const getCollisionCircles = (actor1, actor2) => {
-  const actor1HitCircles = getPrecisionHitCircles(actor1);
-  const actor2HitCircles = getPrecisionHitCircles(actor2);
-  const actor1HasPrecision = actor1HitCircles.length > 0;
-  const actor2HasPrecision = actor2HitCircles.length > 0;
+export function getCollisionCircles(actor1, actor2) {
   const actor1BasicCircle = getActorBasicCircle(actor1);
   const actor2BasicCircle = getActorBasicCircle(actor2);
+  const actor1HasPrecision = actor1.performance.precisionHitAreas.length > 0;
+  const actor2HasPrecision = actor2.performance.precisionHitAreas.length > 0;
 
   if (!actor1HasPrecision && !actor2HasPrecision) {
     return [actor1BasicCircle, actor2BasicCircle];
   }
 
-  const a1Circles = actor1HasPrecision ? actor1HitCircles : [actor1BasicCircle];
-  const a2Circles = actor2HasPrecision ? actor2HitCircles : [actor2BasicCircle];
+  const a1Circles = actor1HasPrecision ? getPrecisionHitCircles(actor1) : [actor1BasicCircle];
+  const a2Circles = actor2HasPrecision ? getPrecisionHitCircles(actor2) : [actor2BasicCircle];
 
   let intersectingCircles = false;
-  a1Circles.forEach((a1Circle) => {
-    a2Circles.forEach((a2Circle) => {
-      if (circleIntersect(a1Circle, a2Circle)) {
+
+  let i;
+  const a1CirclesCount = a1Circles.length;
+  for (i = 0; i < a1CirclesCount; i++) {
+    const a1Circle = a1Circles[i];
+    const shouldBreak = a2Circles.some((a2Circle) => {
+      const isCollision = circleIntersect(a1Circle, a2Circle);
+      if (isCollision) {
         intersectingCircles = [a1Circle, a2Circle];
       }
+      return isCollision;
     });
-  });
+    if (shouldBreak) {
+      break;
+    }
+  }
 
   return intersectingCircles;
-  // return a1Circles.some((a1Circle) =>
-  //   a2Circles.some((a2Circle) => circleIntersect(a1Circle, a2Circle))
-  // );
-};
+}
 
-export const isCollision = (actor1, actor2) => {
+export function isCollision(actor1, actor2) {
   if (actor1.uid === actor2.uid) {
     return false;
   }
   if (
-    pathOr([], ['data', 'collisionBlacklist'])(actor1).includes(actor2.uid) ||
-    pathOr([], ['data', 'collisionBlacklist'])(actor2).includes(actor1.uid)
+    actor1.data.noCollisionWith === actor2.uid ||
+    actor2.data.noCollisionWith === actor1.uid
+    // pathEq(['data', 'noCollisionWith'], actor2.uid)(actor1) ||
+    // pathEq(['data', 'noCollisionWith'], actor1.uid)(actor2)
   ) {
     return false;
   }
+  // todo: if all is true here - grinds to a halt!
+  // return false;
   const isBasicCollision = isSpriteCircleIntersect(actor1, actor2);
 
+  // const a1Specs = getSpecs(actor1.assetKey);
+  // const a2Specs = getSpecs(actor2.assetKey);
+  //
+  // const isBasicCollision = circleIntersect(
+  //   {
+  //     x: actor1.data.x,
+  //     y: actor1.data.y,
+  //     radius: 32,
+  //   },
+  //   {
+  //     x: actor2.data.x,
+  //     y: actor2.data.y,
+  //     radius: 32,
+  //   }
+  // );
+
   if (isBasicCollision) {
+    // return true;
     return !!getCollisionCircles(actor1, actor2);
   }
 
   return false;
-};
+}
 
-export const getActorDamage = ({ data }, speed) => {
-  const damage = (speed * (data.power || data.mass)) / 20;
-  return data.isBullet ? Math.min(1, data.life) * damage : damage;
-};
+export function getActorDamage({ data }, speed) {
+  const damage = (Math.max(1, speed) * (data.power || data.mass)) / 20;
+  const adj = data.isBullet ? Math.min(1, data.life) * damage : damage;
+  return Math.max(0, adj);
+}
 
-const collisionPairs = (actors) =>
-  actors
-    .map((actor) =>
-      actors
-        .filter((actorB) => isCollision(actor, actorB))
-        .map((actorB) => [actor.uid, actorB.uid].sort())
-    )
-    .filter((pairs) => pairs.length > 0);
+// const collisionPairs = (actors) =>
+//   actors
+//     .map((actor) =>
+//       actors
+//         .filter((actorB) => isCollision(actor, actorB))
+//         .map((actorB) => [actor.uid, actorB.uid].sort())
+//     )
+//     .filter((pairs) => pairs.length > 0);
+//
+// export const getUniqCollisionPairs = compose(uniq, unnest, collisionPairs);
 
-export const getUniqCollisionPairs = compose(uniq, unnest, collisionPairs);
+function getUniqCollisionPairs(actors) {
+  const pairs = [];
+  let i, j;
+  const actorsCount = actors.length;
+  for (i = 0; i < actorsCount; i++) {
+    const actorA = actors[i];
+    for (j = 0; j < actorsCount; j++) {
+      const actorB = actors[j];
+      if (isCollision(actorA, actorB)) {
+        const pair = [actorA.uid, actorB.uid].sort();
+        pairs.push(pair);
+      }
+    }
+  }
 
-export const handleCollisions = (pixiGame) => {
+  return uniq(pairs);
+}
+
+export function handleCollisions(pixiGame) {
   const allActors = getAllActors(pixiGame);
-  const collisionPairs = getUniqCollisionPairs(allActors);
+  const uniqCollisionPairs = getUniqCollisionPairs(allActors);
+  // return;
 
-  if (collisionPairs.length) {
-    collisionPairs.forEach(([aUid, bUid]) => {
+  if (uniqCollisionPairs.length) {
+    uniqCollisionPairs.forEach(([aUid, bUid]) => {
       const actorA = getActorByUid(pixiGame)(aUid);
       const actorB = getActorByUid(pixiGame)(bUid);
 
@@ -127,10 +167,7 @@ export const handleCollisions = (pixiGame) => {
         path(['data', 'velocity'])(actorB)
       );
 
-      const collisionSpeed = getCollisionSpeed(
-        vCollisionNorm,
-        vRelativeVelocity
-      );
+      const collisionSpeed = getCollisionSpeed(vCollisionNorm, vRelativeVelocity);
 
       if (collisionSpeed <= 0) {
         // moving apart - so no action needed
@@ -155,8 +192,23 @@ export const handleCollisions = (pixiGame) => {
       const actorADamage = getActorDamage(actorA, collisionSpeed);
       const actorBDamage = getActorDamage(actorB, collisionSpeed);
 
+      const damageTotal = actorADamage + actorBDamage;
+
       actorA.data.life -= actorBDamage;
       actorB.data.life -= actorADamage;
+
+      const distanceFromCenter =
+        typeof actorA.data.distanceFromCenter === 'number'
+          ? actorA.data.distanceFromCenter
+          : actorB.data.distanceFromCenter;
+
+      // two bullets colliding will have no distanceFromCenter
+      if (typeof distanceFromCenter === 'number' && distanceFromCenter < AUDIO_RANGE_PX) {
+        const damageVol = damageTotal / 200;
+        const vol = (damageVol * (AUDIO_RANGE_PX - distanceFromCenter)) / AUDIO_RANGE_PX;
+        playAudio(damageVol > 1 ? 'bigLaserHit' : 'explosion', vol);
+      }
+
       //
       // console.log(
       //   'AFTER',
@@ -172,4 +224,4 @@ export const handleCollisions = (pixiGame) => {
       // );
     });
   }
-};
+}

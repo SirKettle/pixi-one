@@ -18,11 +18,21 @@ export const getFrameTexture = (assetKey, frameKey = 'DEFAULT') => {
   return path([assetKey, frameKey])(_textures);
 };
 
+const getBaseTextureSheet = (imageUrl) => {
+  const textureId = `base-${imageUrl}`;
+  const maybeTexture = getAsset(textureId);
+  if (maybeTexture) {
+    return maybeTexture;
+  }
+  setAsset(new BaseTexture.from(imageUrl), textureId);
+  return getAsset(textureId);
+};
+
 export const setFrameTextures = (loader) => (assetKey) => {
   const imageUrl = loader.resources[assetKey].url;
   const settings = getSpecs(assetKey);
 
-  const baseTextureSheet = new BaseTexture.from(imageUrl);
+  const baseTextureSheet = getBaseTextureSheet(imageUrl);
 
   return (_textures[assetKey] = settings.frames.reduce(
     (acc, { key, rect }) => ({

@@ -5,12 +5,7 @@ import { v4 as generateUid } from 'uuid';
 const getRandomArrayIndex = (arr) => Math.floor(Math.random() * arr.length);
 const getRandomArrayItem = (arr) => arr[getRandomArrayIndex(arr)];
 
-const randomNames = [
-  'Benny Boo',
-  'Sloppety Slop',
-  'Captain Crikey',
-  'Donald Trump',
-];
+const randomNames = ['Benny Boo', 'Sloppety Slop', 'Captain Crikey', 'Donald Trump'];
 const generateName = () => getRandomArrayItem(randomNames);
 
 const SAVED_GAMES_KEY = 'savedGames';
@@ -32,7 +27,7 @@ export const deleteGame = (id) => {
     console.error('Game not found - deleteGame', id);
   }
 
-  localStorage.setItem(SAVED_GAMES_KEY, JSON.stringify(omit([id])(savedGames)));
+  saveKey(SAVED_GAMES_KEY, omit([id])(savedGames));
 };
 
 export const saveGame = (data = {}) => {
@@ -52,31 +47,17 @@ export const saveGame = (data = {}) => {
     startDate,
   };
 
-  localStorage.setItem(
-    SAVED_GAMES_KEY,
-    JSON.stringify({
-      ...savedGames,
-      [id]: game,
-    })
-  );
+  saveKey(SAVED_GAMES_KEY, {
+    ...savedGames,
+    [id]: game,
+  });
 
   return game;
 };
 
-export const getSavedGames = () => {
-  const serializedSavedGames = localStorage.getItem(SAVED_GAMES_KEY);
-  if (serializedSavedGames) {
-    try {
-      return JSON.parse(serializedSavedGames);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  return {};
-};
+export const getSavedGames = () => getKey(SAVED_GAMES_KEY);
 
-const sortByModifiedDate = (a, b) =>
-  prop('modifiedDate')(a) > prop('modifiedDate')(b) ? -1 : 1;
+const sortByModifiedDate = (a, b) => (prop('modifiedDate')(a) > prop('modifiedDate')(b) ? -1 : 1);
 
 export const getSavedGamesInfo = () => {
   const savedGamesInfoArray = reduce((acc, [key, value]) => {
@@ -85,3 +66,32 @@ export const getSavedGamesInfo = () => {
 
   return savedGamesInfoArray.sort(sortByModifiedDate);
 };
+
+export function store(key, data) {
+  if (data) {
+    return saveKey(key, data);
+  }
+  return getKey(key);
+}
+
+export function getKey(key) {
+  const serializedSavedGames = localStorage.getItem(key);
+  if (serializedSavedGames) {
+    try {
+      return JSON.parse(serializedSavedGames);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return {};
+}
+
+export function saveKey(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    return data;
+  } catch (e) {
+    console.error(e);
+  }
+  return {};
+}
