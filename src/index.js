@@ -14,14 +14,15 @@ import {
 import { showLoading } from './screen/loading';
 import { showNewGame } from './screen/newGame';
 import { showLevelSelect } from './screen/levelSelect';
-import { showLevelIntro } from './screen/levelIntro';
-import { showPlay, updateState } from './screen/game';
+import { onUpdate as onUpdateLevelIntro, showLevelIntro } from './screen/levelIntro';
+import { showPlay, onUpdate as onUpdatePlay } from './screen/game';
 import {
   getSettings as getAudioSettings,
   setVolume,
   toggleAudio,
   toggleMusic,
 } from './utils/audio';
+import { GREEN } from './constants/color';
 
 const gameEl = document.getElementById('game');
 
@@ -88,8 +89,15 @@ function mainLoop(game, ticker, delta) {
     game.prevScreen = screen;
   }
 
-  if (screen === SCREEN_PLAY) {
-    updateState(game, delta, deltaMs);
+  switch (screen) {
+    case SCREEN_PLAY:
+      onUpdatePlay(game, delta, deltaMs);
+      break;
+    case SCREEN_LEVEL_INTRO:
+      onUpdateLevelIntro(game, delta, deltaMs);
+      break;
+    default:
+      break;
   }
 
   // 6. Update inputs keys - ie. reset 'up' buttons
@@ -133,6 +141,7 @@ function initStage(game) {
   const dashboardDisplayText = new BitmapText('', {
     font: '20px Digital-7 Mono',
     align: 'left',
+    tint: GREEN,
   });
 
   dashboardDisplayText.x = 25;

@@ -56,7 +56,7 @@ function addLevelAssets(game) {
   world.pivot.y = game.player.data.y;
 }
 
-export function updateState(game, delta, deltaMs) {
+export function onUpdate(game, delta, deltaMs) {
   updatePauseScreen(game);
   updateMission(game, delta, deltaMs)
 

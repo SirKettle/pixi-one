@@ -1,17 +1,41 @@
 import { createFrameTextures, createTextures } from './textures';
 import { getSpecs } from '../specs/getSpecs';
 import { prop } from 'ramda';
+// import { library } from '../sound';
 
-export const loadAssets = async ({ loader, assetKeys = [], tileAssetKeys = [] }) => {
+function loadAsset(loader, url, name) {
+  if (!url) {
+    console.warn('Cannot load asset without url', name);
+    return;
+  }
+
+  const assetKey = name || url;
+
+  if (loader.resources[assetKey]) {
+    console.warn('Asset already loaded', assetKey);
+    return;
+  }
+
+  console.log('load asset', assetKey, url);
+
+  loader.add(name ? { name: assetKey, url } : assetKey);
+}
+
+export const loadAssets = async ({
+  loader,
+  assetKeys = [],
+  tileAssetKeys = [],
+  soundAssetKeys = [],
+}) => {
   assetKeys.concat(tileAssetKeys).forEach((assetKey) => {
     const url = prop('imageUrl')(getSpecs(assetKey));
-    if (url) {
-      if (!loader.resources[assetKey]) {
-        console.log('load asset', assetKey, url);
-        loader.add({ name: assetKey, url });
-      }
-    }
+    loadAsset(loader, url, assetKey);
   });
+
+  // soundAssetKeys.forEach((assetKey) => {
+  //   const url = library[assetKey];
+  //   loadAsset(loader, url, assetKey);
+  // });
 
   await loader.load();
 

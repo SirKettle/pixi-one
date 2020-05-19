@@ -1,11 +1,23 @@
 import { getAsset } from '../utils/assetStore';
-import { goTo, SCREEN_LEVEL_SELECT } from '../utils/screen';
+import { goTo, SCREEN_LEVEL_SELECT, SCREEN_PLAY } from '../utils/screen';
+import { textButton } from '../utils/button';
 
 export function showNewGame(game) {
-  const dashboardDisplayText = getAsset(game.dashboardDisplayTextId);
-  dashboardDisplayText.text = 'Will take you to level select screen in few moments';
+  const app = getAsset(game.app);
+  const container = getAsset(game.containers.info);
+  const newGameButton = textButton(`New\ngame`);
+  newGameButton.position.set(app.screen.width / 2, app.screen.height / 2);
+  newGameButton.on('pointerdown', () => goToScreen(game, SCREEN_LEVEL_SELECT));
+  container.addChild(newGameButton);
+}
 
-  setTimeout(() => {
-    goTo(game, SCREEN_LEVEL_SELECT);
-  }, 2000);
+function goToScreen(game, screen) {
+  // reset state
+  reset(game);
+  goTo(game, screen);
+}
+
+function reset(game) {
+  const container = getAsset(game.containers.info);
+  container.removeChildren();
 }

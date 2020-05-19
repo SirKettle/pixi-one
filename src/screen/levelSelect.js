@@ -1,10 +1,5 @@
 import { uniq } from 'ramda';
-import {
-  getLevel,
-  getMission,
-  getMissionAssetKeys,
-  getTileAssetKeys,
-} from '../specs/levels';
+import { getLevel, getLevelAssetKeys, getMission, getTileAssetKeys } from '../specs/levels';
 import { loadAssets } from '../utils/loader';
 import { goTo, SCREEN_LEVEL_INTRO, SCREEN_LOADING } from '../utils/screen';
 import { getAsset } from '../utils/assetStore';
@@ -16,7 +11,7 @@ export function showLevelSelect(game) {
 
   setTimeout(() => {
     loadLevel(game, { levelKey: 'space_1' });
-  }, 2000);
+  }, 0);
 }
 
 function loadLevel(game, { levelKey, missionKey }) {
@@ -36,8 +31,9 @@ function loadLevel(game, { levelKey, missionKey }) {
   goTo(game, SCREEN_LOADING);
   loadAssets({
     loader: app.loader,
-    assetKeys: uniq(['bullet'].concat(getMissionAssetKeys(levelKey, mission.key))),
+    assetKeys: uniq(['bullet'].concat(getLevelAssetKeys(levelKey))),
     tileAssetKeys: getTileAssetKeys(levelKey),
+    // soundAssetKeys: level.soundAssetKeys
   }).then(() => {
     goTo(game, SCREEN_LEVEL_INTRO);
   });

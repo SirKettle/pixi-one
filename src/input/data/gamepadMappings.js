@@ -40,22 +40,11 @@ const dualShockButtonIndexOrder = [
   PS4.BUTTON_D_RIGHT,
 ];
 
-const dualShockAxisIndexOrder = [
-  PS4.AXIS_L_X,
-  PS4.AXIS_L_Y,
-  PS4.AXIS_R_X,
-  PS4.AXIS_R_Y,
-];
+const dualShockAxisIndexOrder = [PS4.AXIS_L_X, PS4.AXIS_L_Y, PS4.AXIS_R_X, PS4.AXIS_R_Y];
 
-const dualShockButtonIndexMap = dualShockButtonIndexOrder.reduce(
-  reduceArrayIndexes,
-  {}
-);
+const dualShockButtonIndexMap = dualShockButtonIndexOrder.reduce(reduceArrayIndexes, {});
 
-const dualShockAxisIndexMap = dualShockAxisIndexOrder.reduce(
-  reduceArrayIndexes,
-  {}
-);
+const dualShockAxisIndexMap = dualShockAxisIndexOrder.reduce(reduceArrayIndexes, {});
 
 function reduceArrayIndexes(acc, key, index) {
   return {
@@ -85,6 +74,7 @@ export function getButtonIndicesFireOne(gamepadType) {
       keyIndexMap[PS4.BUTTON_L1],
       keyIndexMap[PS4.BUTTON_R1],
       keyIndexMap[PS4.BUTTON_X],
+      keyIndexMap[PS4.BUTTON_SQUARE],
       keyIndexMap[PS4.BUTTON_L2],
       keyIndexMap[PS4.BUTTON_R2],
     ];

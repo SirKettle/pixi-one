@@ -1,12 +1,13 @@
 import { getAsset } from './assetStore';
+import { WHITE } from '../constants/color';
 
 export const drawCircle = ({
   graphicId,
   graphic,
   lineWidth = 2,
-  lineColor = 0xffffff,
+  lineColor = WHITE,
   lineAlpha = 1,
-  fillColor = 0xffffff,
+  fillColor = WHITE,
   fillAlpha = 0,
   x,
   y,
