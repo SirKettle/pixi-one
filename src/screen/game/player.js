@@ -11,11 +11,11 @@ import {
 import { updateTexture } from '../../utils/textures';
 import { getAsset } from '../../utils/assetStore';
 import { normalizeDirection } from '../../utils/physics';
-import { play as playAudio } from '../../utils/audio';
 import { drawHitCircles, getSpriteRadius } from '../../utils/actor';
 import { drawCircle } from '../../utils/graphics';
 import { generateBulletData } from '../../specs/bullets';
 import { getSpecs } from '../../specs/getSpecs';
+import { playSound } from '../../sound';
 import { applyThrusters, createActor, updateActorPosition } from './actor';
 
 export function updatePlayer({ game, level, delta, sinVariant }) {
@@ -68,7 +68,7 @@ export function updatePlayer({ game, level, delta, sinVariant }) {
       })
     );
 
-    playAudio(firePower > 0.8 ? 'bigLaser' : 'laser', firePower);
+    playSound(firePower > 0.8 ? 'bigLaser' : 'laser', firePower);
     // debugger;
     game.bullets.push(newBullet);
   }
@@ -84,13 +84,14 @@ export function updatePlayer({ game, level, delta, sinVariant }) {
     x: path(['data', 'x'])(player),
     y: path(['data', 'y'])(player),
     radius: spriteRadius * 1.6 + lineWidth - sinVariant,
+    clear: true,
   });
 
   if (game.settings.isDebugCollsionMode) {
     drawHitCircles(player);
   }
 
-  if (path(['data', 'life'])(player) < 0) {
+  if (path(['data', 'life'])(player) <= 0) {
     console.log('DEAD');
     game.handlers.onQuit(game);
   }

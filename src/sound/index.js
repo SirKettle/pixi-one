@@ -1,44 +1,92 @@
-// import wiffyInstrumental from '../assets/audio/music/wiffy-instrumental-64kBits.mp3';
-// import ahahahaaa from '../assets/audio/music/ahahahaaa-64kBits.mp3';
-// import episode24 from '../assets/audio/music/episode24.mp3';
-// import bigLaser from '../assets/audio/sfx/quaddamage_shoot.ogg';
-// import laser from '../assets/audio/sfx/quaddamage_out.ogg';
-// import laserHit from '../assets/audio/sfx/explosion_small.mp3';
-// import bigLaserHit from '../assets/audio/sfx/explosion_underwater_distant.mp3';
-// import explosion from '../assets/audio/sfx/explosion_large_distant.mp3';
-//
-// export const library = {
-//   wiffyInstrumental,
-//   ahahahaaa,
-//   episode24,
-//   bigLaser,
-//   laser,
-//   laserHit,
-//   bigLaserHit,
-//   explosion,
-// };
+import { prop, propOr } from 'ramda';
+import {
+  getSettings,
+  play,
+  playCollection,
+  playSingleAudio,
+  setVolume,
+  toggleAudio,
+} from '../utils/audio';
 
-async function loadSounds(trackIds = []) {
-  // const track = await getFile(filePath);
-  // return track;
+export function playTracks(ids) {
+  return playCollection({ ids });
 }
 
+export async function playSingleSound(id, vol) {
+  return playSingleAudio({ id, vol });
+}
 
-export const play = (id, vol = 1) => {};
+export function playSound(id, vol) {
+  return play(id, vol);
+}
 
-export const toggleMusic = (id = 'music-wiffy') => {};
+export function toggleSound() {
+  return toggleAudio();
+}
 
-export const playMusic = (id = 'music-wiffy', loop = true) => {};
+export function toggleMusic() {
+  // TODO: add functionality
+  // maybe pause current collection and resume it somehow...
+  console.log('TODO: need to toggle the current collection playing/pausing');
+}
 
-export const stopMusic = (id = 'music-wiffy') => {};
+export function setMasterVolume(vol) {
+  return setVolume(vol, 'masterVol');
+}
 
-export function setVolume(vol) {}
+export function setMusicVolume(vol) {
+  return setVolume(vol, 'musicVol');
+}
 
-export function toggleAudio() {}
+export function adjustMasterVolume(adjustment) {
+  const settings = getSettings();
+  return setMasterVolume(settings.masterVol + adjustment);
+}
 
-export function getSettings() {}
+export function adjustMusicVolume(adjustment) {
+  const settings = getSettings();
+  return setMusicVolume(settings.musicVol + adjustment);
+}
 
-export function nextTrack() {}
+export async function playMessage(id, vol) {
+  const cacheMusicVol = propOr(1, 'musicVol')(getSettings());
+  return fadeMusic(0, 1000).then(() => {
+    return playSingleSound('new_mesage', vol).then(() => {
+      return playSingleSound(id, vol).then(() => {
+        return playSingleSound('end_of_message', vol).then(() => {
+          return fadeMusic(cacheMusicVol, 2000);
+        });
+      });
+    });
+  });
+}
+
+export async function broadcast(id, vol) {
+  const cacheMusicVol = propOr(1, 'musicVol')(getSettings());
+  return fadeMusic(0, 2000).then(() => {
+    return playSingleSound(id, vol).then(() => {
+      return fadeMusic(cacheMusicVol, 2000);
+    });
+  });
+}
+
+export async function fadeMusic(vol, fadeTimeMs = 1000, fadeStepMs = 50) {
+  const currentMusicVol = propOr(1, 'musicVol')(getSettings());
+  const diff = vol - currentMusicVol;
+  const isFadeOut = diff < 0;
+  const steps = fadeTimeMs / fadeStepMs;
+  const stepAdjustment = diff / steps;
+  return new Promise((resolve) => {
+    const intervalId = setInterval(() => {
+      const newVol = adjustMusicVolume(stepAdjustment);
+      if ((isFadeOut && newVol <= vol) || (!isFadeOut && newVol >= vol)) {
+        clearInterval(intervalId);
+        setMusicVolume(vol);
+        resolve();
+      }
+    }, fadeStepMs);
+  });
+}
 
 export function getPlaylistInfo() {
   return {

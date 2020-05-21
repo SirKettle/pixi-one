@@ -1,5 +1,5 @@
 import { times, unnest } from 'ramda';
-import { getRandomInt } from './random';
+import { getRandomInt } from '../../utils/random';
 
 export const ORDER = {
   PATROL: 'PATROL',
@@ -24,7 +24,7 @@ export function generateMission({
   key,
   description = '',
   allowedTimeMs,
-  objectives = {},
+  objectives = [],
   player,
   actors = [],
   randomActors = [],

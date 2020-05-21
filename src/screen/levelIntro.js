@@ -1,16 +1,10 @@
 import { BitmapText } from 'pixi.js';
 import { getAsset } from '../utils/assetStore';
-import { getLevel } from '../specs/levels';
+import { getLevel } from '../levels';
 import { goTo, SCREEN_PLAY } from '../utils/screen';
-import {
-  play as playAudio,
-  playCollection,
-  playMusic,
-  playSingleSound,
-  stopCollection,
-  stopMusic,
-} from '../utils/audio';
 import { textButton } from '../utils/button';
+import { pathOr } from 'ramda';
+import { broadcast, fadeMusic, playMessage, playSingleSound, playTracks } from '../sound';
 
 const initialState = {
   audioTrack: undefined,
@@ -59,10 +53,13 @@ export function showLevelIntro(game) {
 
   _state.sentences = level.intro;
 
-  playCollection({ ids: ['music-wiffy', 'transition-wiffy2aha', 'music-aha'], loop: true });
-  setTimeout(() => {
-    playSingleSound({ id: 'episode-24' });
-  }, 2000);
+  playTracks(level.soundtrack);
+
+  if (level.introSound) {
+    setTimeout(() => {
+      playSingleSound(level.introSound.id);
+    }, pathOr(0, ['introSound', 'startDelay'])(level));
+  }
 }
 
 function goToGame(game) {

@@ -1,7 +1,7 @@
 {
-  "name": "pixi-one",
+  "name": "space-pixi-one",
   "version": "0.2.0",
-  "description": "My first pixi game",
+  "description": "An odyssey in space",
   "main": "src/index.js",
   "license": "MIT",
   "author": {

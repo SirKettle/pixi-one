@@ -1,25 +1,14 @@
 import { getAsset } from '../../utils/assetStore';
-import {
-  createActor,
-  createTile,
-  updateActors,
-  updateTiles,
-} from './actor';
-import { isButtonUp } from '../../input';
-import {
-  getSettings as getAudioSettings,
-  setVolume,
-  toggleAudio,
-  toggleMusic,
-} from '../../utils/audio';
+import { createActor, createTile, updateActors, updateTiles } from './actor';
 import { updatePauseScreen } from './pauseScreen';
 import { pathEq } from 'ramda';
-import { getLevel } from '../../specs/levels';
+import { getLevel } from '../../levels';
 import { updatePlayer } from './player';
 import { handleCollisions } from './collision';
 import { updateCamera } from './camera';
 import { updateDiscoveredWorld } from './world';
 import { updateMission } from './mission';
+import { updateObjectives } from '../../levels/utils/objective';
 
 export function showPlay(game) {
   const dashboardDisplayText = getAsset(game.dashboardDisplayTextId);
@@ -57,8 +46,8 @@ function addLevelAssets(game) {
 }
 
 export function onUpdate(game, delta, deltaMs) {
+  updateMission(game, delta, deltaMs);
   updatePauseScreen(game);
-  updateMission(game, delta, deltaMs)
 
   const shouldUpdate = pathEq(['time', 'paused'], false)(game);
 
@@ -67,6 +56,8 @@ export function onUpdate(game, delta, deltaMs) {
   }
 
   const sinVariant = (1 + Math.sin(game.time.session.elapsedMs / 100)) * 0.5;
+  updateObjectives(game, delta, deltaMs, sinVariant);
+
   const player = game.player;
   const level = getLevel(game.levelKey);
 

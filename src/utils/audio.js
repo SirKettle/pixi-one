@@ -1,15 +1,53 @@
 import { prop } from 'ramda';
 import { getKey, saveKey } from './store';
 
+import new_mesage from '../assets/audio/message/_new_mesage.mp3';
+import end_of_message from '../assets/audio/message/_end_of_message.mp3';
+import message_nana_crisps from '../assets/audio/message/message_nana_crisps.mp3';
+import message_boss_backtowork from '../assets/audio/message/message_boss_backtowork.mp3';
+
+import transitionWiffyAhaha from '../assets/audio/music/transition-wiffy-to-ahaa.mp3';
+import transition_comfortably_numb_to_danger from '../assets/audio/music/_transition_comfortably_numb_to_danger.mp3';
+import transition_moby_comfortably_numb from '../assets/audio/music/_transition_moby_comfortably_numb.mp3';
+
 import wiffyInstrumentalSrc from '../assets/audio/music/wiffy-instrumental-64kBits.mp3';
-import transitionWiffyAhaha from '../assets/audio/music/transition-wiffy-to-ahaa.mp3'
+import mobyInThisWorld from '../assets/audio/music/Moby - In This World.mp3';
+import portisheadMysterons from '../assets/audio/music/Portishead - Mysterons.mp3';
+import radioSoulwax23DangerHighVoltage from '../assets/audio/music/RadioSoulwax-23DangerHighVoltage.mp3';
+import scissorSistersComfortablyNumb from '../assets/audio/music/Scissor Sisters - Comfortably Numb.mp3';
 import ahahaSrc from '../assets/audio/music/ahahahaaa-64kBits.mp3';
 import episode24Src from '../assets/audio/music/episode24.mp3';
+
 import bigLaser from '../assets/audio/sfx/quaddamage_shoot.ogg';
 import laser from '../assets/audio/sfx/quaddamage_out.ogg';
 import laserHit from '../assets/audio/sfx/explosion_small.mp3';
 import bigLaserHit from '../assets/audio/sfx/explosion_underwater_distant.mp3';
 import explosion from '../assets/audio/sfx/explosion_large_distant.mp3';
+
+const allSounds = [
+  { id: 'laser', src: laser },
+  { id: 'bigLaser', src: bigLaser },
+  { id: 'laserHit', src: laserHit },
+  { id: 'bigLaserHit', src: bigLaserHit },
+  { id: 'explosion', src: explosion },
+  { id: 'episode-24', src: episode24Src },
+  // messages
+  { id: 'new_mesage', src: new_mesage },
+  { id: 'end_of_message', src: end_of_message },
+  { id: 'message_nana_crisps', src: message_nana_crisps },
+  { id: 'message_boss_backtowork', src: message_boss_backtowork },
+  // transitions
+  { id: 'transition-wiffy2aha', src: transitionWiffyAhaha },
+  { id: 'transition_comfortably_numb_to_danger', src: transition_comfortably_numb_to_danger },
+  { id: 'transition_moby_comfortably_numb', src: transition_moby_comfortably_numb },
+  // music
+  { id: 'music-wiffy', src: wiffyInstrumentalSrc },
+  { id: 'music-aha', src: ahahaSrc },
+  { id: 'mobyInThisWorld', src: mobyInThisWorld },
+  { id: 'portisheadMysterons', src: portisheadMysterons },
+  { id: 'radioSoulwax23DangerHighVoltage', src: radioSoulwax23DangerHighVoltage },
+  { id: 'scissorSistersComfortablyNumb', src: scissorSistersComfortablyNumb },
+];
 
 export const AUDIO_RANGE_PX = 800;
 
@@ -19,9 +57,12 @@ const audioSettings = {
   on: true,
   masterVol: 1,
   musicVol: 1,
-  sfxVol: 1,
   ...getKey(AUDIO_STORE_KEY),
 };
+
+export function getSettings() {
+  return { ...audioSettings };
+}
 
 // for cross browser compatibility
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -53,26 +94,6 @@ function getBufferSource(audioBuffer, gainNode) {
   return trackSource;
 }
 
-const sfxLibrary = [
-  { id: 'laser', src: laser },
-  { id: 'bigLaser', src: bigLaser },
-  { id: 'laserHit', src: laserHit },
-  { id: 'bigLaserHit', src: bigLaserHit },
-  { id: 'explosion', src: explosion },
-  { id: 'episode-24', src: episode24Src, isSinglePlay: true },
-];
-
-const musicLibrary = [
-  { id: 'music-wiffy', src: wiffyInstrumentalSrc },
-  { id: 'transition-wiffy2aha', src: transitionWiffyAhaha },
-  { id: 'music-aha', src: ahahaSrc },
-];
-
-const playlist = musicLibrary.map(prop('id'));
-const allSounds = sfxLibrary.concat(
-  musicLibrary.map((t) => ({ ...t, isSinglePlay: true, isMusic: true }))
-);
-
 const sounds = {};
 allSounds.forEach(({ id, src }) => {
   loadFile(src).then((audioBuffer) => {
@@ -95,44 +116,10 @@ export const play = (id, vol = 1) => {
   playSfx(track.audioBuffer, vol);
 };
 
-export const toggleMusic = (id = 'music-wiffy') => {
-  const track = sounds[id];
-  if (track.bufferSource) {
-    stopMusic(id);
-  } else {
-    playMusic(id);
-  }
-};
-
-export const stopMusic = (id = 'music-wiffy') => {
-  const track = sounds[id];
-  if (!track.bufferSource) {
-    console.log('no bufferSource');
-    return;
-  }
-  track.bufferSource.stop();
-  delete track.bufferSource;
-};
-
-export const playMusic = (id = 'music-wiffy', loop = true) => {
-  if (!audioSettings.on) {
-    return;
-  }
-  const track = sounds[id];
-  if (track.bufferSource) {
-    track.bufferSource.stop();
-    delete track.bufferSource;
-  }
-  track.bufferSource = getBufferSource(track.audioBuffer, musicGainNode);
-  track.bufferSource.loop = loop;
-  track.bufferSource.start();
-};
-
 const defaultCollectionState = {
   index: 0,
   ids: [],
   loop: false,
-  playing: false,
 };
 
 const _global = {
@@ -159,10 +146,10 @@ export function nextTrack(index) {
 
   if (collection.index < collection.ids.length) {
     _global.collection = collection;
-    playSingleSound({
+    playSingleAudio({
       id: getCurrentTrackId(),
       gainNode: musicGainNode,
-      isCollection: true,
+      setVolume: false, // // don’t want to override the music gainNode vol
     }).then(() => nextTrack());
     return;
   }
@@ -176,7 +163,7 @@ function resetCollection() {
   console.log('resetCollection', _global.collection);
 }
 
-function stopSound(id) {
+async function stopSound(id) {
   return new Promise((resolve) => {
     const { playing } = _global;
     if (playing[id] && typeof playing[id].stop === 'function') {
@@ -193,7 +180,7 @@ function stopSound(id) {
   });
 }
 
-export function stopCollection() {
+export async function stopCollection() {
   return new Promise((resolve) => {
     const id = getCurrentTrackId();
     resetCollection();
@@ -210,18 +197,20 @@ export function stopCollection() {
 export function playCollection({ ids = [], index = 0, loop = true }) {
   console.log('playCollection part 1', ids.join(', '));
   stopCollection().then(() => {
+    if (ids.length < 1) {
+      return;
+    }
     console.log('playCollection part 2', ids.join(', '));
-    _global.collection.ids = ids;
-    _global.collection.loop = loop;
+    _global.collection = { ids, index, loop };
     nextTrack(0);
   });
 }
 
-export function playSingleSound({
+export async function playSingleAudio({
   id,
   vol = 1,
+  setVolume = true,
   gainNode = audioCtx.createGain(),
-  isCollection = false,
 }) {
   return new Promise((resolve, reject) => {
     const track = sounds[id];
@@ -235,15 +224,17 @@ export function playSingleSound({
       return;
     }
 
-    console.log('playSingleSound stopSound', id);
+    console.log('playSingleAudio stopSound', id);
     stopSound(id).then(() => {
-      console.log('playSingleSound start', id);
-      gainNode.gain.value = vol;
+      console.log('playSingleAudio start', id);
+      if (setVolume) {
+        gainNode.gain.value = audioSettings.masterVol * vol;
+      }
       playing[id] = getBufferSource(track.audioBuffer, gainNode);
       playing[id].start();
 
       playing[id].onended = () => {
-        console.log('playSingleSound onended - resolve', id);
+        console.log('playSingleAudio onended - resolve', id);
         delete playing[id];
         resolve();
       };
@@ -251,7 +242,7 @@ export function playSingleSound({
   });
 }
 
-window.playSingleSound = playSingleSound;
+window.playSingleAudio = playSingleAudio;
 
 // create a buffer, plop in data, connect and play -> modify graph here if required
 function playSfx(audioBuffer, vol = 1) {
@@ -263,28 +254,20 @@ function playSfx(audioBuffer, vol = 1) {
     return;
   }
   const gainNode = audioCtx.createGain();
-  gainNode.gain.value = vol;
+  gainNode.gain.value = audioSettings.masterVol * vol;
   const trackSource = getBufferSource(audioBuffer, gainNode);
   trackSource.start();
   return trackSource;
 }
 
-export function setVolume(vol) {
-  if (typeof vol === 'number') {
-    audioSettings.masterVol = Math.max(0, Math.min(1, vol));
-  } else {
-    const sfx = prop('sfx')(vol);
-    const music = prop('music')(vol);
-
-    if (typeof sfx === 'number') {
-      audioSettings.sfxVol = Math.max(0, Math.min(1, sfx));
-    }
-    if (typeof music === 'number') {
-      audioSettings.musicVol = Math.max(0, Math.min(1, music));
-    }
-  }
+export function setVolume(vol, volumeKey) {
+  audioSettings[volumeKey] = Math.max(0, Math.min(1, vol));
+  // update music volume
   musicGainNode.gain.value = audioSettings.masterVol * audioSettings.musicVol;
+  // update the store
   saveKey(AUDIO_STORE_KEY, audioSettings);
+  // return new volume
+  return audioSettings[volumeKey];
 }
 
 export function toggleAudio() {
@@ -301,8 +284,4 @@ export function toggleAudio() {
     }
   }
   saveKey(AUDIO_STORE_KEY, audioSettings);
-}
-
-export function getSettings() {
-  return { ...audioSettings };
 }

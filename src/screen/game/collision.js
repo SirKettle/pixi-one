@@ -1,15 +1,8 @@
 import { compose, path, pathEq, pathOr, pick, uniq, unnest } from 'ramda';
-import { AUDIO_RANGE_PX, play as playAudio } from '../../utils/audio';
+import { AUDIO_RANGE_PX } from '../../utils/audio';
 import { getCollisionNorm, getCollisionSpeed, relativeVelocity } from '../../utils/physics';
-import {
-  getActorByUid,
-  getActorRadius,
-  getAllActors,
-  getPrecisionHitCircles,
-} from '../../utils/actor';
-import { getAsset } from '../../utils/assetStore';
-import { drawCircle } from '../../utils/graphics';
-import { getSpecs } from '../../specs/getSpecs';
+import { getActorByUid, getAllActors, getPrecisionHitCircles } from '../../utils/actor';
+import { playSound } from '../../sound';
 
 export const circleIntersect = (c1, c2) => {
   // Calculate the distance between the two circles
@@ -206,7 +199,7 @@ export function handleCollisions(game) {
       if (typeof distanceFromCenter === 'number' && distanceFromCenter < AUDIO_RANGE_PX) {
         const damageVol = damageTotal / 200;
         const vol = (damageVol * (AUDIO_RANGE_PX - distanceFromCenter)) / AUDIO_RANGE_PX;
-        playAudio(damageVol > 1 ? 'bigLaserHit' : 'explosion', vol);
+        playSound(damageVol > 1 ? 'bigLaserHit' : 'explosion', vol);
       }
 
       //

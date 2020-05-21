@@ -1,22 +1,46 @@
+import { propEq, propOr } from 'ramda';
 import { getAsset } from '../../utils/assetStore';
-import { getMission } from '../../specs/levels';
 import { getAllActorsInTeams } from '../../utils/actor';
+import { getMission } from '../../levels';
+import { actionEvent } from '../../levels/utils/events';
+import { OBJECTIVE_TYPE_GO_TO_WAYPOINT } from '../../levels/utils/objective';
 
+// extract into separate modules
+// - session/time/clock
+// - mission/objectives
+// - display/dashboard
+// - debug console
 export const updateMission = (game, delta, deltaMs) => {
-  const { time, levelKey, missionKey, player, dashboardDisplayTextId, settings } = game;
+  const { time, levelKey, player, dashboardDisplayTextId, settings } = game;
   const app = getAsset(game.app);
   const prevSession = time.session;
   const elapsedMs = prevSession.elapsedMs + deltaMs;
   const elapsedCs = Math.floor(elapsedMs / 100);
   const elapsedS = Math.floor(elapsedMs / 1000);
 
-  const mission = getMission(levelKey, missionKey);
+  const mission = getMission(levelKey);
 
   if (!time.paused) {
     time.mission.elapsedMs += deltaMs;
   }
 
-  // every 0.1 seconds
+  // every 1 second check
+  if (elapsedS !== prevSession.elapsedS) {
+    const { levelData } = game;
+    const { eventHistory } = levelData;
+    propOr(
+      [],
+      'events'
+    )(game)
+      .filter((e) => !eventHistory.includes(e.uid))
+      .forEach((e) => {
+        if (time.mission.elapsedMs >= e.startTimeMs) {
+          levelData.eventHistory = [...eventHistory, e.uid];
+          actionEvent(game, e);
+        }
+      });
+  }
+
   if (elapsedCs !== prevSession.elapsedCs) {
     // onSaveGame(state);
 
@@ -33,6 +57,7 @@ export const updateMission = (game, delta, deltaMs) => {
           time.paused ? ' (PAUSED)' : ''
         }`
       );
+      missionInfo.push(`Mission time elapsed: ${Math.floor(time.mission.elapsedMs / 1000)}`);
     }
 
     // move this to world generator file
@@ -45,7 +70,18 @@ export const updateMission = (game, delta, deltaMs) => {
       missionInfo.push(`Friends: ${getAllActorsInTeams(game, mission.player.team).length}`);
     }
 
-    missionInfo.push(`Health: ${Math.floor(player.data.life)}`);
+    const objectives = propOr([], 'objectives')(game);
+    if (objectives.length) {
+      objectives.filter(propEq('isComplete', false)).forEach((objective, index) => {
+        missionInfo.push(`\nObjective (${index + 1}): ${objective.title}`);
+        missionInfo.push(objective.description);
+        if (objective.type === OBJECTIVE_TYPE_GO_TO_WAYPOINT) {
+          missionInfo.push(JSON.stringify(objective.waypoint));
+        }
+      });
+    }
+
+    missionInfo.push(`\nHealth: ${Math.floor(player.data.life)}`);
 
     missionInfo.push(`\nCoords: ${Math.floor(player.data.x)}, ${Math.floor(player.data.y)}`);
     missionInfo.push(`Area key: ${cachedAreaKey}`);

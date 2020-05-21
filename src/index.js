@@ -16,13 +16,8 @@ import { showNewGame } from './screen/newGame';
 import { showLevelSelect } from './screen/levelSelect';
 import { onUpdate as onUpdateLevelIntro, showLevelIntro } from './screen/levelIntro';
 import { showPlay, onUpdate as onUpdatePlay } from './screen/game';
-import {
-  getSettings as getAudioSettings,
-  setVolume,
-  toggleAudio,
-  toggleMusic,
-} from './utils/audio';
 import { GREEN } from './constants/color';
+import { adjustMusicVolume, toggleMusic, toggleSound } from './sound';
 
 const gameEl = document.getElementById('game');
 
@@ -59,20 +54,16 @@ function handleUserInput(game) {
     game.settings.isDebugCollsionMode = !game.settings.isDebugCollsionMode;
   }
   if (isButtonUp('a')) {
-    toggleAudio();
+    toggleSound();
   }
   if (isButtonUp('m')) {
     toggleMusic();
   }
   if (isButtonUp('[')) {
-    const audioSettings = getAudioSettings();
-    console.log(audioSettings);
-    setVolume({ music: audioSettings.musicVol - 0.1 });
+    adjustMusicVolume(-0.1);
   }
   if (isButtonUp(']')) {
-    const audioSettings = getAudioSettings();
-    console.log(audioSettings);
-    setVolume({ music: audioSettings.musicVol + 0.1 });
+    adjustMusicVolume(0.1);
   }
 }
 
@@ -159,17 +150,33 @@ function initStage(game) {
 }
 
 function onPauseToggle(game) {
-  game.time.paused = !game.time.paused;
+  const currentPauseState = game.time.paused;
+
+  if (currentPauseState === true) {
+    // we're about to unpause the game, for now temporarily, we
+    // will mark all objectives "as read" here
+    console.log('set all objectives to read as we unpause the game');
+    game.objectives = game.objectives.map((o) => ({ ...o, isRead: true }));
+  }
+  game.time.paused = !currentPauseState;
 }
 
-function onQuit(game) {
+function resetShared(game) {
+  const dashboardDisplayText = getAsset(game.dashboardDisplayTextId);
+  dashboardDisplayText.text = '';
+
+  const graphic = getAsset(game.dash.nearestTargetId);
+  graphic.clear();
+}
+
+function onQuit(game, screen = SCREEN_NEW_GAME) {
   game.time.paused = true;
-  goTo(_game, SCREEN_NEW_GAME);
 
   setTimeout(() => {
+    resetShared(game);
     destroyAllAssets();
+    goTo(_game, screen);
   }, 0);
-  // update screen
 }
 
 export function initialise(gameEl) {

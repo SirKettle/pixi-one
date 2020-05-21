@@ -6,8 +6,9 @@ import { generateBulletData } from '../../specs/bullets';
 import { applyThrusters, createActor } from './actor';
 import { doEveryMs } from '../../utils/random';
 import { getSpecs } from '../../specs/getSpecs';
-import { getOrder, ORDER } from '../../utils/mission';
-import { AUDIO_RANGE_PX, play as playAudio } from '../../utils/audio';
+import { getOrder, ORDER } from '../../levels/utils/mission';
+import { AUDIO_RANGE_PX } from '../../utils/audio';
+import { playSound } from '../../sound';
 
 const fire = (game, host) => () => {
   const hostFirePower = Math.max(0, Math.min(1, pathOr(0.5, ['data', 'firePower'])(host)));
@@ -20,7 +21,7 @@ const fire = (game, host) => () => {
 
   if (host.data.distanceFromCenter < AUDIO_RANGE_PX) {
     const vol = (hostFirePower * (AUDIO_RANGE_PX - host.data.distanceFromCenter)) / AUDIO_RANGE_PX;
-    playAudio('laser', vol);
+    playSound('laser', vol);
   }
 
   game.bullets.push(newBullet);
@@ -34,7 +35,7 @@ export function updateActorAi(game, actor, delta, deltaMs) {
   const specs = getSpecs(actor.assetKey);
 
   const { type } = order;
-  const potentialTargets = getAllActorsInTeams(game,  path(['data', 'hostileTeams'])(actor));
+  const potentialTargets = getAllActorsInTeams(game, path(['data', 'hostileTeams'])(actor));
 
   const sortedPotentialTargets = potentialTargets.sort(sortByNearest(actor));
   const nearestTarget = sortedPotentialTargets[0];

@@ -14,7 +14,7 @@ export function textButton(text, args = {}) {
   const border = new Graphics();
   drawCircle({
     graphic: border,
-    radius: sprite.width * 0.85,
+    radius: args.fixedRadius ? args.fixedRadius : sprite.width * 0.85,
     fillColor: GREEN,
     fillAlpha: 1,
     lineWidth: 0,
