@@ -16,7 +16,7 @@ import { showNewGame } from './screen/newGame';
 import { showLevelSelect } from './screen/levelSelect';
 import { onUpdate as onUpdateLevelIntro, showLevelIntro } from './screen/levelIntro';
 import { showPlay, onUpdate as onUpdatePlay } from './screen/game';
-import { GREEN } from './constants/color';
+import { GREEN, ORANGE, YELLOW } from './constants/color';
 import { adjustMusicVolume, toggleMusic, toggleSound } from './sound';
 
 const gameEl = document.getElementById('game');
@@ -141,6 +141,19 @@ function initStage(game) {
   game.dashboardDisplayTextId = setAsset(dashboardDisplayText);
   dash.addChild(dashboardDisplayText);
 
+  const objectivesDisplayText = new BitmapText('', {
+    font: '20px Digital-7 Mono',
+    align: 'left',
+    tint: YELLOW,
+  });
+
+  objectivesDisplayText.anchor.set(0, 0);
+  objectivesDisplayText.position.set(app.screen.width - 400, 120);
+  objectivesDisplayText.maxWidth = 350;
+  objectivesDisplayText.alpha = 0.75;
+  game.objectivesDisplayTextId = setAsset(objectivesDisplayText);
+  dash.addChild(objectivesDisplayText);
+
   // Dash - Instruments, radars, dashboard etc
   const nearestTarget = new Graphics();
   world.addChild(nearestTarget);
@@ -155,7 +168,7 @@ function onPauseToggle(game) {
   if (currentPauseState === true) {
     // we're about to unpause the game, for now temporarily, we
     // will mark all objectives "as read" here
-    console.log('set all objectives to read as we unpause the game');
+    // console.log('set all objectives to read as we unpause the game');
     game.objectives = game.objectives.map((o) => ({ ...o, isRead: true }));
   }
   game.time.paused = !currentPauseState;

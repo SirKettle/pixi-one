@@ -1,8 +1,8 @@
 import { getAsset } from './assetStore';
-import { RED, WHITE } from '../constants/color';
-import { combineVelocity, getDirection, getVelocity } from './physics';
+import { ORANGE, RED, WHITE } from '../constants/color';
+import { combineVelocity, getDirection, getDistance, getVelocity } from './physics';
 
-export const drawCircle = ({
+export function drawCircle({
   graphicId,
   graphic,
   lineWidth = 2,
@@ -14,7 +14,7 @@ export const drawCircle = ({
   y,
   radius,
   clear = false,
-}) => {
+}) {
   const circleGraphic = graphic || getAsset(graphicId);
 
   if (!circleGraphic) {
@@ -30,19 +30,52 @@ export const drawCircle = ({
   circleGraphic.drawCircle(x, y, radius);
 
   circleGraphic.endFill();
-};
+}
 
-export const drawDirection = ({
-  fromPoint,
+function getAlpha(alpha, distance, fromPoint, targetPoint) {
+  if (typeof alpha === 'number') {
+    return alpha;
+  }
+  const dist = typeof distance === 'number' ? distance : getDistance(fromPoint, targetPoint);
+  return 0.2 + 0.8 * (Math.max(0, 3000 - dist) / 3000);
+}
+
+export function drawNavigationArrow({
+  graphic,
+  actor,
   targetPoint,
+  distance,
+  startRadius = 0,
+  alpha,
+  length = 100,
+  lineWidth = 3,
+  color = ORANGE,
+}) {
+  const lineAlpha = getAlpha(alpha, distance, actor.data, targetPoint);
+  const direction = getDirection(actor.data, targetPoint);
+
+  drawDirection({
+    graphic,
+    direction,
+    fromPoint: actor.data,
+    startRadius,
+    lineColor: color,
+    lineWidth,
+    length,
+    lineAlpha,
+  });
+}
+
+export function drawDirection({
+  fromPoint,
+  direction,
   startRadius = 0,
   length = 100,
   ...otherProps
-}) => {
-  if (!fromPoint || !targetPoint) {
+}) {
+  if (!fromPoint || typeof direction !== 'number') {
     return;
   }
-  const direction = getDirection(fromPoint, targetPoint);
   const startVelocity = getVelocity({ speed: startRadius, direction });
   const lengthVelocity = getVelocity({ speed: length, direction });
   const startPoint = combineVelocity(startVelocity, fromPoint);
@@ -55,9 +88,9 @@ export const drawDirection = ({
     toY: endPoint.y,
     ...otherProps,
   });
-};
+}
 
-export const drawLine = ({
+export function drawLine({
   graphicId,
   graphic,
   fromX,
@@ -70,7 +103,7 @@ export const drawLine = ({
   fillColor = WHITE,
   fillAlpha = 0,
   clear = false,
-}) => {
+}) {
   const lineGraphic = graphic || getAsset(graphicId);
 
   if (!lineGraphic) {
@@ -88,4 +121,4 @@ export const drawLine = ({
   lineGraphic.lineTo(toX, toY);
   lineGraphic.closePath();
   lineGraphic.endFill();
-};
+}

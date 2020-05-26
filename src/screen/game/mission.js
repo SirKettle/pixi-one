@@ -70,16 +70,6 @@ export const updateMission = (game, delta, deltaMs) => {
       missionInfo.push(`Friends: ${getAllActorsInTeams(game, mission.player.team).length}`);
     }
 
-    const objectives = propOr([], 'objectives')(game);
-    if (objectives.length) {
-      objectives.filter(propEq('isComplete', false)).forEach((objective, index) => {
-        missionInfo.push(`\nObjective (${index + 1}): ${objective.title}`);
-        missionInfo.push(objective.description);
-        if (objective.type === OBJECTIVE_TYPE_GO_TO_WAYPOINT) {
-          missionInfo.push(JSON.stringify(objective.waypoint));
-        }
-      });
-    }
 
     missionInfo.push(`\nHealth: ${Math.floor(player.data.life)}`);
 

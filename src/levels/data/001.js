@@ -1,9 +1,10 @@
 import defaultLevel from '../utils/defaultLevel';
 import { starsParallax } from '../../utils/parallax';
 import { generateMission } from '../utils/mission';
-import { messageEvent, newObjectiveEvent } from '../utils/events';
+import { newObjectiveEvent, phoneMessageEvent, radioMessageEvent } from '../utils/events';
 import { addObjective, createWaypointObjective } from '../utils/objective';
 import { onCompleteLevel } from '../index';
+import { playPhoneMessage, playRadioMessage } from '../../sound';
 
 const allowedTimeMs = 10 * 60 * 1000;
 
@@ -28,7 +29,7 @@ export default {
     player: {
       hostileTeams: ['bad'],
       team: 'good',
-      assetKey: 'tantiveIV',
+      assetKey: 'craftGarbage1',
     },
     objectives: [],
     actors: [
@@ -43,37 +44,43 @@ export default {
     ],
   }),
   events: [
-    messageEvent('message_nana_crisps', 6500),
-    messageEvent('message_boss_backtowork', 25000),
+    phoneMessageEvent('message_nana_crisps', 6500),
+    radioMessageEvent('message_boss_backtowork', 25000),
     newObjectiveEvent(
-      createWaypointObjective({
-        title: 'Get to the space dump',
-        description: 'Follow the navigation system to the new waypoint',
-        waypoint: { position: { x: 7000, y: 3500 }, radius: 300 },
-        onComplete: (game) => {
-          addObjective(
-            game,
-            createWaypointObjective({
-              title: 'Now back to HQ',
-              description: 'Now time to return to base',
-              waypoint: { position: { x: -3500, y: -500 }, radius: 150 },
-              onComplete: (game) => {
-                onCompleteLevel(game);
-              },
-            })
-          );
-        },
-      }),
-      40000
+      () =>
+        createWaypointObjective({
+          title: 'Get to the space dump',
+          description: 'Follow the navigation system to the new waypoint',
+          waypoint: { position: { x: 7000, y: 3500 }, radius: 300 },
+          onComplete: (game) => {
+            playRadioMessage('message_boss_finally');
+            addObjective(
+              game,
+              createWaypointObjective({
+                title: 'Now back to HQ',
+                description: 'Now time to return to base',
+                waypoint: { position: { x: -3500, y: -500 }, radius: 150 },
+                onComplete: (game) => {
+                  playPhoneMessage('message_nana_bad_news').then(() => {
+                    onCompleteLevel(game);
+                  });
+                },
+              })
+            );
+          },
+        }),
+      22000
     ),
   ],
   unlocksLevels: ['level002'],
   soundtrack: [
-    'mobyInThisWorld',
-    'transition_moby_comfortably_numb',
-    'scissorSistersComfortablyNumb',
-    'transition_comfortably_numb_to_danger',
-    'radioSoulwax23DangerHighVoltage',
-    'portisheadMysterons',
+    // 'mobyInThisWorld',
+    // 'transition_moby_comfortably_numb',
+    // 'scissorSistersComfortablyNumb',
+    // 'transition_comfortably_numb_to_danger',
+    // 'radioSoulwax23DangerHighVoltage',
+    // 'portisheadMysterons',
+    'music-aha',
+    'music-wiffy',
   ],
 };

@@ -4,18 +4,12 @@ import { getLevel } from '../levels';
 import { goTo, SCREEN_PLAY } from '../utils/screen';
 import { textButton } from '../utils/button';
 import { pathOr } from 'ramda';
-import { broadcast, fadeMusic, playMessage, playSingleSound, playTracks } from '../sound';
+import { playSingleSound, playTracks } from '../sound';
+import { onResetText, onUpdateText } from '../utils/animateText';
+import { GREEN, ORANGE, YELLOW } from '../constants/color';
+import { stopSound } from '../utils/audio';
 
-const initialState = {
-  audioTrack: undefined,
-  sentences: [],
-  sentenceIndex: 0,
-  characterIndex: 0,
-  lastUpdateMs: 0,
-  complete: false,
-};
 let bitmapText;
-let _state = { ...initialState };
 
 export function showLevelIntro(game) {
   const app = getAsset(game.app);
@@ -29,11 +23,13 @@ export function showLevelIntro(game) {
   const titleText = new BitmapText(`${level.title}`, {
     font: '38px Digital-7 Mono',
     align: 'center',
+    tint: GREEN,
   });
 
   bitmapText = new BitmapText(level.description, {
     font: '25px Digital-7 Mono',
     align: 'left',
+    tint: GREEN,
   });
 
   titleText.anchor.set(0.5, 0);
@@ -48,10 +44,13 @@ export function showLevelIntro(game) {
 
   const skipButton = textButton(`Skip\nto game`);
   skipButton.position.set(app.screen.width - 55, 35);
-  skipButton.on('pointerdown', () => goToGame(game));
+  skipButton.on('pointerdown', () => {
+    goToGame(game);
+    if (level.introSound) {
+      stopSound(level.introSound.id);
+    }
+  });
   container.addChild(skipButton);
-
-  _state.sentences = level.intro;
 
   playTracks(level.soundtrack);
 
@@ -71,70 +70,22 @@ function goToGame(game) {
 
 function reset(game) {
   const container = getAsset(game.containers.info);
-  _state = { ...initialState };
   bitmapText.destroy();
   container.removeChildren();
-}
-
-const UPDATE_CHAR_MS = 80;
-
-function updateIndices(prevState, deltaMs) {
-  const newState = {
-    ...prevState,
-  };
-
-  newState.lastUpdateMs += deltaMs;
-
-  const shouldUpdateText = newState.lastUpdateMs >= UPDATE_CHAR_MS;
-
-  if (shouldUpdateText) {
-    newState.lastUpdateMs = 0;
-    newState.characterIndex += 1;
-
-    const sentence = newState.sentences[newState.sentenceIndex];
-    if (newState.characterIndex >= sentence.length) {
-      newState.characterIndex = 0;
-      newState.sentenceIndex += 1;
-
-      if (newState.sentenceIndex >= newState.sentences.length) {
-        newState.complete = true;
-      }
-    }
-  }
-  return newState;
+  onResetText();
 }
 
 export function onUpdate(game, delta, deltaMs) {
-  const prevState = { ..._state };
+  const level = getLevel(game.levelKey);
 
-  if (!_state.complete) {
-    _state = {
-      ...prevState,
-      ...updateIndices(prevState, deltaMs),
-    };
-
-    if (_state.complete) {
+  onUpdateText({
+    fixedStartCopy: `${level.description}\n\n\n`,
+    sentences: level.intro,
+    bitmapText,
+    deltaMs,
+    updateCharMs: 80,
+    onComplete: () => {
       setTimeout(() => goToGame(game), 5000);
-    }
-  }
-
-  if (_state.characterIndex !== prevState.characterIndex) {
-    const level = getLevel(game.levelKey);
-    const { sentences } = _state;
-    const copy = sentences
-      .filter((sentence, index) => _state.sentenceIndex >= index)
-      .map((sentence, index) => {
-        const showComplete = _state.sentenceIndex > index;
-        if (showComplete) {
-          return sentence;
-        }
-        return sentence.slice(0, _state.characterIndex);
-      })
-      .join('\n\n');
-
-    bitmapText.text = `${level.description}
-
-${copy}
-  `;
-  }
+    },
+  });
 }

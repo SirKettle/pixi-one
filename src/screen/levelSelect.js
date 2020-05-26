@@ -69,6 +69,7 @@ function loadLevel(game, { levelKey }) {
   game.passiveActors = mission.passiveActors || [];
   game.actors = mission.actors || [];
   game.bullets = [];
+  game.particles = [];
   game.tiles = level.tiles;
   game.levelKey = level.key;
   game.levelData = {
@@ -82,6 +83,7 @@ function loadLevel(game, { levelKey }) {
   goToScreen(game, SCREEN_LOADING);
   loadAssets({
     loader: app.loader,
+    animatedAssetKeys: ['explosion200'],
     assetKeys: uniq(['bullet'].concat(getLevelAssetKeys(levelKey))),
     tileAssetKeys: getTileAssetKeys(levelKey),
     // soundAssetKeys: level.soundAssetKeys

@@ -2,7 +2,7 @@ import { path, pathOr, prop, propEq, propOr } from 'ramda';
 import { v4 as generateUid } from 'uuid';
 import { Graphics, Sprite, TilingSprite } from 'pixi.js';
 import { getAsset, removeAsset, setAsset } from '../../utils/assetStore';
-import { getFrameTexture, getTexture } from '../../utils/textures';
+import { getFrameTextureId, getTextureId } from '../../utils/textures';
 import { getSpecs } from '../../specs/getSpecs';
 import {
   combineVelocity,
@@ -13,11 +13,12 @@ import {
 } from '../../utils/physics';
 import { updateActorAi } from './ai';
 import { drawHitCircles, getActorRadius } from '../../utils/actor';
+import { addExplosion } from '../../utils/particle';
 
 export const createTile = (app, container) => (tile) => {
   const { screen } = app;
   const sprite = new TilingSprite(
-    getAsset(getTexture(path(['data', 'assetKey'])(tile))),
+    getAsset(getTextureId(path(['data', 'assetKey'])(tile))),
     screen.width,
     screen.height
   );
@@ -45,7 +46,7 @@ export const initActor = ({ assetKey, overrides = {}, uid }) => {
     ...overrides,
   };
 
-  const textureId = getFrameTexture(assetKey);
+  const textureId = getFrameTextureId(assetKey);
   const sprite = new Sprite(getAsset(textureId));
   sprite.anchor.set(0.5);
   sprite.position.set(data.x, data.y); // maybe don't even need this?
@@ -75,6 +76,7 @@ export const createActor = (container) => (data) => {
   actor.performance = {
     radiusPx: getActorRadius(actor),
     precisionHitAreas: pathOr([], ['hitArea', 'precision'])(specs),
+    startLife: actor.data.life,
   };
   return actor;
 };
@@ -134,7 +136,7 @@ export function updateTiles(tiles, offsetPoint) {
 
 export const updateActors = (actors, level, delta, deltaMs, game) => {
   actors.forEach((actor, index) => {
-    const { data, graphicId, spriteId } = actor;
+    const { data, graphicId, performance, spriteId } = actor;
     getAsset(graphicId).clear();
 
     if (data.ai) {
@@ -158,6 +160,15 @@ export const updateActors = (actors, level, delta, deltaMs, game) => {
     }
 
     if (data.life <= 0) {
+      if (!data.isBullet) {
+        addExplosion({
+          container: getAsset(game.containers.worldNear),
+          scale: performance.radiusPx / 100,
+          x: data.x,
+          y: data.y,
+        });
+      }
+
       actors.splice(index, 1);
       removeAsset(spriteId);
       removeAsset(graphicId);

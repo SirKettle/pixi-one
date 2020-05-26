@@ -7,6 +7,7 @@ import {
   setVolume,
   toggleAudio,
 } from '../utils/audio';
+import { queuePromise } from '../utils/promise';
 
 export function playTracks(ids) {
   return playCollection({ ids });
@@ -48,25 +49,57 @@ export function adjustMusicVolume(adjustment) {
   return setMusicVolume(settings.musicVol + adjustment);
 }
 
-export async function playMessage(id, vol) {
-  const cacheMusicVol = propOr(1, 'musicVol')(getSettings());
-  return fadeMusic(0, 1000).then(() => {
-    return playSingleSound('new_mesage', vol).then(() => {
-      return playSingleSound(id, vol).then(() => {
-        return playSingleSound('end_of_message', vol).then(() => {
-          return fadeMusic(cacheMusicVol, 2000);
+// todo: create a message queue.
+// 1. add new message which returns a promise - resolves after message ends
+// 2. if message already playing, waits until the previous message ends before starting
+
+// const messageQueue = [];
+// const playingMessage = false;
+//
+// function addMessageToQueue (newMessage) {
+//   const deferred = new Promise(resolve => {
+//
+//     if (playingMessage) {
+//     }
+//   })
+//
+// }
+
+// addToQueue(playMessage()).then()
+
+// todo: add a new volume parameter to audio - temp fade
+// 1. this should not be saved anywhere
+// 2. if set, music gainnode uses the fadeVol if set otherwise musicVol
+// 3. fadeVol should be reset at appropriate times
+
+async function playMessage({ id, vol = 1, startSoundId, endSoundId }) {
+  return queuePromise({
+    queueId: 'message',
+    promise: () => {
+      const cacheMusicVol = propOr(1, 'musicVol')(getSettings());
+      return fadeMusic(0.2, 1000).then(() => {
+        return playSingleSound(startSoundId, vol).then(() => {
+          return playSingleSound(id, vol).then(() => {
+            return playSingleSound(endSoundId, vol).then(() => {
+              return fadeMusic(cacheMusicVol, 2000);
+            });
+          });
         });
       });
-    });
+    },
   });
 }
 
-export async function broadcast(id, vol) {
-  const cacheMusicVol = propOr(1, 'musicVol')(getSettings());
-  return fadeMusic(0, 2000).then(() => {
-    return playSingleSound(id, vol).then(() => {
-      return fadeMusic(cacheMusicVol, 2000);
-    });
+export async function playPhoneMessage(id, vol = 1) {
+  return playMessage({ id, vol, startSoundId: 'new_message', endSoundId: 'end_of_message' });
+}
+
+export async function playRadioMessage(id, vol = 1) {
+  return playMessage({
+    id,
+    vol,
+    startSoundId: 'new_radio_message',
+    endSoundId: 'end_of_radio_message',
   });
 }
 

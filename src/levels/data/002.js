@@ -4,6 +4,14 @@ import { generateMission, getOrder, ORDER } from '../utils/mission';
 import { getRandomInt } from '../../utils/random';
 import mobyInThisWorld from '../../assets/audio/music/Moby - In This World.mp3';
 import portisheadMysterons from '../../assets/audio/music/Portishead - Mysterons.mp3';
+import { newObjectiveEvent, phoneMessageEvent, radioMessageEvent } from '../utils/events';
+import {
+  addObjective,
+  createObjective,
+  createWaypointObjective,
+  OBJECTIVE_TYPE_ELIMINATE_ALL_HOSTILES,
+} from '../utils/objective';
+import { onCompleteLevel } from '../index';
 
 const mission = generateMission({
   key: 'm1',
@@ -12,7 +20,8 @@ const mission = generateMission({
   player: {
     hostileTeams: ['bad'],
     team: 'good',
-    assetKey: 'spacecraft',
+    // assetKey: 'craftNcfc',
+    assetKey: 'craftH1',
     // hostileTeams: ['good'],
     // team: 'bad',
     // assetKey: 'tCraft',
@@ -84,8 +93,38 @@ export default {
   gravity: 0,
   atmosphere: 0.05,
   mission,
+  events: [
+    radioMessageEvent('message_navy_return_fire', 3000),
+    phoneMessageEvent('message_nan_congrats_navy_job', 25000),
+    newObjectiveEvent(
+      () =>
+        createObjective({
+          type: OBJECTIVE_TYPE_ELIMINATE_ALL_HOSTILES,
+          title: 'Kill or be killed!',
+          description: 'Eliminate all hostile targets',
+          onComplete: (game) => {
+            addObjective(
+              game,
+              createWaypointObjective({
+                title: 'Now back to HQ',
+                description: 'Now time to return to base',
+                waypoint: { position: { x: -3500, y: -500 }, radius: 150 },
+                onComplete: (game) => {
+                  onCompleteLevel(game);
+                },
+              })
+            );
+          },
+        }),
+      4000
+    ),
+  ],
   unlocksLevels: [],
-  soundtrack: ['music-wiffy', 'transition-wiffy2aha', 'music-aha'],
+  soundtrack: [
+    'music-wiffy',
+    //'transition-wiffy2aha',
+    'music-aha',
+  ],
   introSound: {
     id: 'episode-24',
     startDelay: 2000,

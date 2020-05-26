@@ -1,5 +1,8 @@
 import { getHorizontalFrameRect } from '../utils/spritesheet';
 import playerImage from '../assets/images/craft_spritesheet.png';
+import craftGarbage1Image from '../assets/images/sprites/garbage-ship-one100x84.png';
+import craftH1Image from '../assets/images/sprites/red_ship_50x45 copy.png';
+import craftNcfcImage from '../assets/images/sprites/ncfc-ship91x56.png';
 import tCraftImage from '../assets/images/tiecraft.png';
 import starDestroyerImage from '../assets/images/stardestroyer.png';
 import tantiveIVImage from '../assets/images/tantive-IV.png';
@@ -20,7 +23,6 @@ export const spacecraft = {
       x: 0.5,
       y: 0.5,
       radius: 0.5,
-      radiusPx: 16,
     },
     // we can extend this to use more specific hit areas with levels percentage of life?
     // we can extend this to depend on the current frame/texture?
@@ -41,6 +43,83 @@ export const spacecraft = {
   ],
 };
 
+export const craftGarbage1 = {
+  thrust: {
+    forward: 0.35,
+    reverse: 0.1,
+    side: 0.035,
+    turn: 0.3,
+  },
+  // because of scale - x is percentage of width, y of height, radius of width
+  hitArea: {
+    basic: {
+      x: 0.5,
+      y: 0.5,
+      radius: 0.45,
+    },
+  },
+  initialData: {
+    shield: 1,
+    life: 400,
+    mass: 300,
+    fuelCapacity: 100,
+  },
+  imageUrl: craftGarbage1Image,
+  frames: [{ key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 100, 84) }],
+  // frames: [{ key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 226, 205) }],
+};
+
+export const craftH1 = {
+  thrust: {
+    forward: 0.75,
+    reverse: 0.1,
+    side: 0.07,
+    turn: 0.7,
+  },
+  // because of scale - x is percentage of width, y of height, radius of width
+  hitArea: {
+    basic: {
+      x: 0.5,
+      y: 0.5,
+      radius: 0.45,
+    },
+  },
+  initialData: {
+    shield: 1,
+    life: 400,
+    mass: 300,
+    fuelCapacity: 100,
+  },
+  imageUrl: craftH1Image,
+  frames: [{ key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 50, 45) }],
+  // frames: [{ key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 226, 205) }],
+};
+
+export const craftNcfc = {
+  thrust: {
+    forward: 0.75,
+    reverse: 0.1,
+    side: 0.07,
+    turn: 0.7,
+  },
+  // because of scale - x is percentage of width, y of height, radius of width
+  hitArea: {
+    basic: {
+      x: 0.5,
+      y: 0.5,
+      radius: 0.5,
+    },
+  },
+  initialData: {
+    shield: 1,
+    life: 200,
+    mass: 150,
+    fuelCapacity: 100,
+  },
+  imageUrl: craftNcfcImage,
+  frames: [{ key: 'DEFAULT' /* straight */, rect: getHorizontalFrameRect(0, 91, 56) }],
+};
+
 export const tCraft = {
   thrust: {
     forward: 0.65,
@@ -53,11 +132,8 @@ export const tCraft = {
     basic: {
       x: 0.5,
       y: 0.5,
-      radiusPx: 16,
       radius: 0.5,
     },
-    // we can extend this to use more specific hit areas with levels percentage of life?
-    // we can extend this to depend on the current frame/texture?
   },
   initialData: {
     shield: 1,
@@ -81,11 +157,8 @@ export const xWing = {
     basic: {
       x: 0.5,
       y: 0.5,
-      radiusPx: 24,
       radius: 0.5,
     },
-    // we can extend this to use more specific hit areas with levels percentage of life?
-    // we can extend this to depend on the current frame/texture?
   },
   initialData: {
     shield: 1,
@@ -109,7 +182,6 @@ export const starDestroyer = {
     basic: {
       x: 0.5,
       y: 0.5,
-      radiusPx: 128,
       radius: 0.5,
     },
     precision: [
@@ -159,8 +231,6 @@ export const starDestroyer = {
         radius: 0.17,
       },
     ],
-    // we can extend this to use more specific hit areas with levels percentage of life?
-    // we can extend this to depend on the current frame/texture?
   },
   initialData: {
     shield: 1,
@@ -192,6 +262,7 @@ export const tantiveIV = {
       radiusPx: 127,
       radius: 0.5,
     },
+    // todo: these are incorrect below - were simply copied from craft above
     precision: [
       {
         x: 0,
@@ -239,8 +310,6 @@ export const tantiveIV = {
         radius: 0.17,
       },
     ],
-    // we can extend this to use more specific hit areas with levels percentage of life?
-    // we can extend this to depend on the current frame/texture?
   },
   initialData: {
     shield: 1,

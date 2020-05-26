@@ -1,8 +1,9 @@
 import { v4 as generateUid } from 'uuid';
 import { path, pathEq, pathOr, propEq, propOr } from 'ramda';
-import { drawCircle, drawDirection } from '../../utils/graphics';
-import { ORANGE, RED, WHITE } from '../../constants/color';
+import { drawCircle } from '../../utils/graphics';
+import { ORANGE } from '../../constants/color';
 import { getDistance } from '../../utils/physics';
+import { getAllActorsInTeams } from '../../utils/actor';
 
 export const OBJECTIVE_TYPE_GO_TO_WAYPOINT = 'OBJECTIVE_TYPE_GO_TO_WAYPOINT';
 export const OBJECTIVE_TYPE_GO_TO_TARGET = 'OBJECTIVE_TYPE_GO_TO_TARGET';
@@ -47,21 +48,19 @@ export function addObjective(game, objective) {
 
 export function updateObjectives(game, delta, deltaMs, sinVariant) {
   const graphic = getAsset(game.dash.nearestTargetId);
-  graphic.clear();
-  const objectives = propOr([], 'objectives')(game);
-  const hasUnread = objectives.some(propEq('isRead', false));
+  const hasUnread = game.objectives.some(propEq('isRead', false));
 
   if (hasUnread && pathEq(['time', 'paused'], false)(game)) {
-    console.log('has unread objectives - pause now');
+    // console.log('has unread objectives - pause now');
     // game.handlers.onPauseToggle(game);
     // return;
   }
 
-  objectives.forEach((objective) => {
-    if (objective.isComplete || objective.isFail) {
-      return;
-    }
+  const currentObjectives = game.objectives
+    .filter(propEq('isComplete', false))
+    .filter(propEq('isFail', false));
 
+  currentObjectives.forEach((objective) => {
     if (propEq('type', OBJECTIVE_TYPE_GO_TO_WAYPOINT)(objective)) {
       const targetPoint = path(['waypoint', 'position'])(objective);
       if (!targetPoint) {
@@ -88,15 +87,16 @@ export function updateObjectives(game, delta, deltaMs, sinVariant) {
           radius: targetRadius,
         });
       }
+    }
 
-      drawDirection({
-        graphic,
-        fromPoint: game.player.data,
-        targetPoint,
-        startRadius: game.player.performance.radiusPx + 50,
-        lineColor: ORANGE,
-        length: 50 + Math.min(distance / 20, 300),
-      });
+    if (propEq('type', OBJECTIVE_TYPE_ELIMINATE_ALL_HOSTILES)(objective)) {
+      const hostileTeams = game.player.data.hostileTeams || [];
+      const hostileCount = getAllActorsInTeams(game, hostileTeams).length;
+
+      if (hostileCount <= 0) {
+        objective.isComplete = true;
+        objective.onComplete(game);
+      }
     }
   });
 }

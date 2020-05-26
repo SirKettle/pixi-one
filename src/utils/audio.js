@@ -1,10 +1,16 @@
 import { prop } from 'ramda';
 import { getKey, saveKey } from './store';
 
-import new_mesage from '../assets/audio/message/_new_mesage.mp3';
+import new_message from '../assets/audio/message/_new_message.mp3';
 import end_of_message from '../assets/audio/message/_end_of_message.mp3';
+import new_radio_message from '../assets/audio/message/_new-radio-message.mp3';
+import end_of_radio_message from '../assets/audio/message/_end-radio-message.mp3';
 import message_nana_crisps from '../assets/audio/message/message_nana_crisps.mp3';
 import message_boss_backtowork from '../assets/audio/message/message_boss_backtowork.mp3';
+import message_boss_finally from '../assets/audio/message/boss-finally-turned-up.mp3';
+import message_nana_bad_news from '../assets/audio/message/nan-bad-news.mp3';
+import message_nan_congrats_navy_job from '../assets/audio/message/nan_congrats_navy_job.mp3';
+import message_navy_return_fire from '../assets/audio/message/navy_return_fire.mp3';
 
 import transitionWiffyAhaha from '../assets/audio/music/transition-wiffy-to-ahaa.mp3';
 import transition_comfortably_numb_to_danger from '../assets/audio/music/_transition_comfortably_numb_to_danger.mp3';
@@ -32,10 +38,16 @@ const allSounds = [
   { id: 'explosion', src: explosion },
   { id: 'episode-24', src: episode24Src },
   // messages
-  { id: 'new_mesage', src: new_mesage },
+  { id: 'new_message', src: new_message },
   { id: 'end_of_message', src: end_of_message },
+  { id: 'new_radio_message', src: new_radio_message },
+  { id: 'end_of_radio_message', src: end_of_radio_message },
   { id: 'message_nana_crisps', src: message_nana_crisps },
   { id: 'message_boss_backtowork', src: message_boss_backtowork },
+  { id: 'message_boss_finally', src: message_boss_finally },
+  { id: 'message_nana_bad_news', src: message_nana_bad_news },
+  { id: 'message_nan_congrats_navy_job', src: message_nan_congrats_navy_job },
+  { id: 'message_navy_return_fire', src: message_navy_return_fire },
   // transitions
   { id: 'transition-wiffy2aha', src: transitionWiffyAhaha },
   { id: 'transition_comfortably_numb_to_danger', src: transition_comfortably_numb_to_danger },
@@ -163,7 +175,7 @@ function resetCollection() {
   console.log('resetCollection', _global.collection);
 }
 
-async function stopSound(id) {
+export async function stopSound(id) {
   return new Promise((resolve) => {
     const { playing } = _global;
     if (playing[id] && typeof playing[id].stop === 'function') {

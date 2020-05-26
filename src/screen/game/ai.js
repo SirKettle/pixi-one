@@ -37,6 +37,8 @@ export function updateActorAi(game, actor, delta, deltaMs) {
   const { type } = order;
   const potentialTargets = getAllActorsInTeams(game, path(['data', 'hostileTeams'])(actor));
 
+  //TODO: only go through this if on screen? Try turning off AI to see impact on performance?
+  // if it does decrease, maybe only check some things periodically
   const sortedPotentialTargets = potentialTargets.sort(sortByNearest(actor));
   const nearestTarget = sortedPotentialTargets[0];
 

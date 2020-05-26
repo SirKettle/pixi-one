@@ -46,6 +46,9 @@ function addLevelAssets(game) {
 }
 
 export function onUpdate(game, delta, deltaMs) {
+  const graphic = getAsset(game.dash.nearestTargetId);
+  graphic.clear();
+
   updateMission(game, delta, deltaMs);
   updatePauseScreen(game);
 
@@ -65,9 +68,10 @@ export function onUpdate(game, delta, deltaMs) {
   updateActors(game.bullets, level, delta, deltaMs, game);
   updateActors(game.actors, level, delta, deltaMs, game);
   updateActors(game.passiveActors, level, delta, deltaMs, game);
+  updateActors(game.particles, level, delta, deltaMs, game);
 
   // 2. Update player
-  updatePlayer({ game, level, delta, sinVariant });
+  updatePlayer({ game, level, delta, deltaMs, sinVariant });
 
   // 3. Move parallax backgrounds
   updateTiles(game.tiles, player.data);

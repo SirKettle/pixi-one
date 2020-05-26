@@ -11,14 +11,14 @@ import {
 import { updateTexture } from '../../utils/textures';
 import { getAsset } from '../../utils/assetStore';
 import { normalizeDirection } from '../../utils/physics';
-import { drawHitCircles, getSpriteRadius } from '../../utils/actor';
-import { drawCircle } from '../../utils/graphics';
 import { generateBulletData } from '../../specs/bullets';
 import { getSpecs } from '../../specs/getSpecs';
 import { playSound } from '../../sound';
 import { applyThrusters, createActor, updateActorPosition } from './actor';
+import { updateDash } from './dash';
+import { SCREEN_LEVEL_SELECT } from '../../utils/screen';
 
-export function updatePlayer({ game, level, delta, sinVariant }) {
+export function updatePlayer({ game, level, delta, deltaMs, sinVariant }) {
   const player = game.player;
   const playerSpecs = getSpecs(player.assetKey);
   const playerSprite = getAsset(player.spriteId);
@@ -59,7 +59,8 @@ export function updatePlayer({ game, level, delta, sinVariant }) {
   updateActorPosition(player, level, delta);
 
   // 3. fire weapon
-  const firePower = Math.min(1, getButtonPressedMs(FIRE_ONE) / 500) * 0.8 + 0.2;
+  const fireButtonPressedTime = getButtonPressedMs(FIRE_ONE);
+  const firePower = Math.min(1, fireButtonPressedTime / 500) * 0.8 + 0.2;
   if (isButtonUp(FIRE_ONE)) {
     const newBullet = createActor(world)(
       generateBulletData({
@@ -73,26 +74,13 @@ export function updatePlayer({ game, level, delta, sinVariant }) {
     game.bullets.push(newBullet);
   }
 
-  const spriteRadius = getSpriteRadius(playerSprite);
-  const lineWidth = firePower * spriteRadius + sinVariant * 5;
-
-  drawCircle({
-    graphicId: player.graphicId,
-    lineWidth,
-    lineColor: 0x00aaff,
-    lineAlpha: firePower * 0.3,
-    x: path(['data', 'x'])(player),
-    y: path(['data', 'y'])(player),
-    radius: spriteRadius * 1.6 + lineWidth - sinVariant,
-    clear: true,
-  });
-
-  if (game.settings.isDebugCollsionMode) {
-    drawHitCircles(player);
-  }
+  // draw player graphics here
+  updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, firePower });
 
   if (path(['data', 'life'])(player) <= 0) {
     console.log('DEAD');
-    game.handlers.onQuit(game);
+    game.handlers.onQuit(game, SCREEN_LEVEL_SELECT);
+    // setTimeout(() => {
+    // }, 1000);
   }
 }

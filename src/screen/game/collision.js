@@ -1,8 +1,17 @@
-import { compose, path, pathEq, pathOr, pick, uniq, unnest } from 'ramda';
+import { path, pathOr, pick, uniq } from 'ramda';
 import { AUDIO_RANGE_PX } from '../../utils/audio';
-import { getCollisionNorm, getCollisionSpeed, relativeVelocity } from '../../utils/physics';
+import {
+  combineVelocity,
+  getCollisionNorm,
+  getCollisionSpeed,
+  getDirection,
+  getVelocity,
+  relativeVelocity,
+} from '../../utils/physics';
 import { getActorByUid, getAllActors, getPrecisionHitCircles } from '../../utils/actor';
 import { playSound } from '../../sound';
+import { getAsset } from '../../utils/assetStore';
+import { addExplosion } from '../../utils/particle';
 
 export const circleIntersect = (c1, c2) => {
   // Calculate the distance between the two circles
@@ -167,8 +176,6 @@ export function handleCollisions(game) {
         return;
       }
 
-      // console.log(`${actorA.uid}: collision detected with ${actorB.uid}`);
-
       const actorAMass = pathOr(1, ['data', 'mass'])(actorA);
       const actorBMass = pathOr(1, ['data', 'mass'])(actorB);
       const impulse = (2 * collisionSpeed) / (actorAMass + actorBMass);
@@ -179,13 +186,8 @@ export function handleCollisions(game) {
       actorB.data.velocity.x += impulse * actorAMass * vCollisionNorm.x;
       actorB.data.velocity.y += impulse * actorAMass * vCollisionNorm.y;
 
-      // console.log('BEFORE', actorA.data.assetKey, actorA.data.life);
-      // console.log('BEFORE', actorB.data.assetKey, actorB.data.life);
-
       const actorADamage = getActorDamage(actorA, collisionSpeed);
       const actorBDamage = getActorDamage(actorB, collisionSpeed);
-
-      const damageTotal = actorADamage + actorBDamage;
 
       actorA.data.life -= actorBDamage;
       actorB.data.life -= actorADamage;
@@ -197,24 +199,29 @@ export function handleCollisions(game) {
 
       // two bullets colliding will have no distanceFromCenter
       if (typeof distanceFromCenter === 'number' && distanceFromCenter < AUDIO_RANGE_PX) {
-        const damageVol = damageTotal / 200;
+        const isOneActorBullet = actorA.data.isBullet || actorB.data.isBullet;
+
+        const damageTotal = isOneActorBullet
+          ? actorA.data.isBullet
+            ? actorADamage
+            : actorBDamage
+          : actorADamage + actorBDamage;
+
+        const damageVol = damageTotal / 100;
         const vol = (damageVol * (AUDIO_RANGE_PX - distanceFromCenter)) / AUDIO_RANGE_PX;
         playSound(damageVol > 1 ? 'bigLaserHit' : 'explosion', vol);
-      }
 
-      //
-      // console.log(
-      //   'AFTER',
-      //   actorA.data.assetKey,
-      //   actorA.data.life,
-      //   actorBDamage
-      // );
-      // console.log(
-      //   'AFTER',
-      //   actorB.data.assetKey,
-      //   actorB.data.life,
-      //   actorADamage
-      // );
+        const direction = getDirection(actorACircle, actorBCircle);
+        const startVelocity = getVelocity({ speed: actorACircle.radius, direction });
+        const position = combineVelocity(startVelocity, actorACircle);
+
+        addExplosion({
+          container: getAsset(game.containers.worldNear),
+          scale: damageVol,
+          x: position.x,
+          y: position.y,
+        });
+      }
     });
   }
 }

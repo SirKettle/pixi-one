@@ -5,7 +5,7 @@ import { SCREEN_LEVEL_SELECT } from '../utils/screen';
 
 const levels = {
   all: [level001, level002],
-  availableKeys: ['level001'],
+  availableKeys: ['level001', 'level002'],
 };
 
 export function getLevelAssetKeys(levelKey) {
@@ -42,6 +42,10 @@ export function getAvailableLevels(game) {
 
 export function onCompleteLevel(game) {
   const currentLevel = getLevel(game.levelKey);
-  levels.availableKeys = [...levels.availableKeys, ...propOr([], 'unlocksLevels')(currentLevel)];
+  levels.availableKeys = uniq([
+    ...levels.availableKeys,
+    ...propOr([], 'unlocksLevels')(currentLevel),
+  ]);
+
   game.handlers.onQuit(game, SCREEN_LEVEL_SELECT);
 }

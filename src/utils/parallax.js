@@ -1,21 +1,30 @@
 export const starsParallax = [
-  { data: { assetKey: 'starsOne', parallax: 0.1, alpha: 1 } },
+  { data: { assetKey: 'spaceBg', parallax: 0.1, alpha: 0.85 } },
   {
     data: {
-      assetKey: 'starsOne',
+      assetKey: 'starsTransparent',
       parallax: 0.125,
       alpha: 0.85,
-      scale: 2,
+      scale: 1,
     },
   },
-  {
-    data: {
-      assetKey: 'starsOne',
-      parallax: 0.5,
-      alpha: 0.1,
-      scale: 5,
-    },
-  },
+  // { data: { assetKey: 'starsOne', parallax: 0.1, alpha: 1 } },
+  // {
+  //   data: {
+  //     assetKey: 'starsOne',
+  //     parallax: 0.125,
+  //     alpha: 0.85,
+  //     scale: 2,
+  //   },
+  // },
+  // {
+  //   data: {
+  //     assetKey: 'starsOne',
+  //     parallax: 0.5,
+  //     alpha: 0.1,
+  //     scale: 5,
+  //   },
+  // },
   {
     data: {
       assetKey: 'starsOne',
