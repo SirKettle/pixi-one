@@ -2,8 +2,6 @@ import defaultLevel from '../utils/defaultLevel';
 import { starsParallax } from '../../utils/parallax';
 import { generateMission, getOrder, ORDER } from '../utils/mission';
 import { getRandomInt } from '../../utils/random';
-import mobyInThisWorld from '../../assets/audio/music/Moby - In This World.mp3';
-import portisheadMysterons from '../../assets/audio/music/Portishead - Mysterons.mp3';
 import { newObjectiveEvent, phoneMessageEvent, radioMessageEvent } from '../utils/events';
 import {
   addObjective,

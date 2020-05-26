@@ -13,14 +13,8 @@ import message_nan_congrats_navy_job from '../assets/audio/message/nan_congrats_
 import message_navy_return_fire from '../assets/audio/message/navy_return_fire.mp3';
 
 import transitionWiffyAhaha from '../assets/audio/music/transition-wiffy-to-ahaa.mp3';
-import transition_comfortably_numb_to_danger from '../assets/audio/music/_transition_comfortably_numb_to_danger.mp3';
-import transition_moby_comfortably_numb from '../assets/audio/music/_transition_moby_comfortably_numb.mp3';
 
 import wiffyInstrumentalSrc from '../assets/audio/music/wiffy-instrumental-64kBits.mp3';
-import mobyInThisWorld from '../assets/audio/music/Moby - In This World.mp3';
-import portisheadMysterons from '../assets/audio/music/Portishead - Mysterons.mp3';
-import radioSoulwax23DangerHighVoltage from '../assets/audio/music/RadioSoulwax-23DangerHighVoltage.mp3';
-import scissorSistersComfortablyNumb from '../assets/audio/music/Scissor Sisters - Comfortably Numb.mp3';
 import ahahaSrc from '../assets/audio/music/ahahahaaa-64kBits.mp3';
 import episode24Src from '../assets/audio/music/episode24.mp3';
 
@@ -50,15 +44,9 @@ const allSounds = [
   { id: 'message_navy_return_fire', src: message_navy_return_fire },
   // transitions
   { id: 'transition-wiffy2aha', src: transitionWiffyAhaha },
-  { id: 'transition_comfortably_numb_to_danger', src: transition_comfortably_numb_to_danger },
-  { id: 'transition_moby_comfortably_numb', src: transition_moby_comfortably_numb },
   // music
   { id: 'music-wiffy', src: wiffyInstrumentalSrc },
   { id: 'music-aha', src: ahahaSrc },
-  { id: 'mobyInThisWorld', src: mobyInThisWorld },
-  { id: 'portisheadMysterons', src: portisheadMysterons },
-  { id: 'radioSoulwax23DangerHighVoltage', src: radioSoulwax23DangerHighVoltage },
-  { id: 'scissorSistersComfortablyNumb', src: scissorSistersComfortablyNumb },
 ];
 
 export const AUDIO_RANGE_PX = 800;

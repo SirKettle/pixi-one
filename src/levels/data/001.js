@@ -74,12 +74,6 @@ export default {
   ],
   unlocksLevels: ['level002'],
   soundtrack: [
-    // 'mobyInThisWorld',
-    // 'transition_moby_comfortably_numb',
-    // 'scissorSistersComfortablyNumb',
-    // 'transition_comfortably_numb_to_danger',
-    // 'radioSoulwax23DangerHighVoltage',
-    // 'portisheadMysterons',
     'music-aha',
     'music-wiffy',
   ],
