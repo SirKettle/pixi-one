@@ -1,6 +1,6 @@
 import { Application, BitmapText, Container, filters, Graphics } from 'pixi.js';
 import { isButtonUp, onUpdate as onUpdateInputs, subscribe as inputsSubscribe } from './input';
-import fontDashDisplay from './assets/font/displaydash.xml';
+import fontDashDisplay from './assets/font/digital7_mono_white.xml';
 import { logGameCredits } from './utils/log';
 import { destroyAllAssets, getAsset, setAsset } from './utils/assetStore';
 import {
