@@ -110,7 +110,6 @@ export const play = (id, vol = 1) => {
   }
   const track = sounds[id];
   if (!track) {
-    // console.warn('track not loaded');
     return;
   }
   playSfx(track.audioBuffer, vol);
@@ -154,13 +153,11 @@ export function nextTrack(index) {
     return;
   }
 
-  console.log('end of collection');
   resetCollection();
 }
 
 function resetCollection() {
   _global.collection = { ...defaultCollectionState };
-  console.log('resetCollection', _global.collection);
 }
 
 export async function stopSound(id) {
@@ -168,11 +165,9 @@ export async function stopSound(id) {
     const { playing } = _global;
     if (playing[id] && typeof playing[id].stop === 'function') {
       playing[id].onended = () => {
-        console.log('stopSound - onended', id);
         delete playing[id];
         resolve();
       };
-      console.log('stopSound', id);
       playing[id].stop();
     } else {
       resolve();
@@ -195,12 +190,10 @@ export async function stopCollection() {
 }
 
 export function playCollection({ ids = [], index = 0, loop = true }) {
-  console.log('playCollection part 1', ids.join(', '));
   stopCollection().then(() => {
     if (ids.length < 1) {
       return;
     }
-    console.log('playCollection part 2', ids.join(', '));
     _global.collection = { ids, index, loop };
     nextTrack(0);
   });
@@ -224,9 +217,7 @@ export async function playSingleAudio({
       return;
     }
 
-    console.log('playSingleAudio stopSound', id);
     stopSound(id).then(() => {
-      console.log('playSingleAudio start', id);
       if (setVolume) {
         gainNode.gain.value = audioSettings.masterVol * vol;
       }
@@ -234,7 +225,6 @@ export async function playSingleAudio({
       playing[id].start();
 
       playing[id].onended = () => {
-        console.log('playSingleAudio onended - resolve', id);
         delete playing[id];
         resolve();
       };

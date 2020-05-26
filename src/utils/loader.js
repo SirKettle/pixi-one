@@ -12,11 +12,11 @@ function loadAsset(loader, url, name) {
   const assetKey = name || url;
 
   if (loader.resources[assetKey]) {
-    console.warn('Asset already loaded', assetKey);
+    // console.warn('Asset already loaded', assetKey);
     return;
   }
 
-  console.log('load asset', assetKey, url);
+  // console.log('load asset', assetKey, url);
 
   loader.add(name ? { name: assetKey, url } : assetKey);
 }
@@ -26,21 +26,14 @@ export const loadAssets = async ({
   assetKeys = [],
   animatedAssetKeys = [],
   tileAssetKeys = [],
-  soundAssetKeys = [],
 }) => {
   assetKeys.concat(animatedAssetKeys, tileAssetKeys).forEach((assetKey) => {
     const url = prop('imageUrl')(getSpecs(assetKey));
     loadAsset(loader, url, assetKey);
   });
 
-  // soundAssetKeys.forEach((assetKey) => {
-  //   const url = library[assetKey];
-  //   loadAsset(loader, url, assetKey);
-  // });
-
   await loader.load();
 
-  console.log('loadAssets after await');
   // create textures ready for our sprites
   createFrameTextures(loader, assetKeys);
   createAnimatedFrameTextures(loader, animatedAssetKeys);

@@ -55,8 +55,8 @@ export function updateDiscoveredWorld(game) {
     if (newCodes.length) {
       newCodes.forEach((code) => {
         discoveredAreas[getAreaCodeKey(code)] = [...code];
-        const bounds = getAreaBoundsByCode(code);
-
+        // const bounds = getAreaBoundsByCode(code);
+        //
         // const x = getRandomInt(pathOr(0, ['from', 'x'])(bounds), pathOr(1000, ['to', 'x'])(bounds));
         // const y = getRandomInt(pathOr(0, ['from', 'y'])(bounds), pathOr(1000, ['to', 'y'])(bounds));
         //

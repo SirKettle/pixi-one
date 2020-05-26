@@ -22,7 +22,6 @@ import { adjustMusicVolume, toggleMusic, toggleSound } from './sound';
 const gameEl = document.getElementById('game');
 
 function navigate(game) {
-  console.log('navigate to', game.screen);
   switch (game.screen) {
     case SCREEN_LOADING:
       return showLoading(game);

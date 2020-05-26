@@ -47,12 +47,6 @@ export function actionEvent(game, event) {
       return;
     case EVENT_TYPE_NEW_OBJECTIVE:
       addObjective(game, event.objective());
-      // at this point, we need to add the objective to the list of
-      // current objectives, or replace them all? (with a replace param)
-      // Also, we need to alert the user of new objective somehow
-      console.log('new objective', event.objective());
-      // maybe the mission engine should listen for new objectives!
-
       return;
     default:
       return;
