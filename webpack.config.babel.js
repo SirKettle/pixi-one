@@ -13,7 +13,7 @@ export default (env, argv) => {
 
   return {
     entry: {
-      bp: '@babel/polyfill',
+      babel_polyfill: '@babel/polyfill',
       app: './src/index.js',
     },
     output: {
@@ -85,6 +85,10 @@ export default (env, argv) => {
         {
           from: 'src/assets',
           to: path.resolve(process.cwd(), 'dist', 'assets'),
+        },
+        {
+          from: 'src/assets/favicon.png',
+          to: path.resolve(process.cwd(), 'dist'),
         },
       ]),
       new webpack.DefinePlugin({
