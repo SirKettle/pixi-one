@@ -11,6 +11,7 @@ import message_boss_finally from '../assets/audio/message/boss-finally-turned-up
 import message_nana_bad_news from '../assets/audio/message/nan-bad-news.mp3';
 import message_nan_congrats_navy_job from '../assets/audio/message/nan_congrats_navy_job.mp3';
 import message_navy_return_fire from '../assets/audio/message/navy_return_fire.mp3';
+import message_we_did_it_kid_back_to_base from '../assets/audio/message/we_did_it_kid_back_to_base.mp3';
 
 import transitionWiffyAhaha from '../assets/audio/music/transition-wiffy-to-ahaa.mp3';
 
@@ -42,6 +43,7 @@ const allSounds = [
   { id: 'message_nana_bad_news', src: message_nana_bad_news },
   { id: 'message_nan_congrats_navy_job', src: message_nan_congrats_navy_job },
   { id: 'message_navy_return_fire', src: message_navy_return_fire },
+  { id: 'message_we_did_it_kid_back_to_base', src: message_we_did_it_kid_back_to_base },
   // transitions
   { id: 'transition-wiffy2aha', src: transitionWiffyAhaha },
   // music

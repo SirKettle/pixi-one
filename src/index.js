@@ -176,6 +176,8 @@ function onPauseToggle(game) {
 function resetShared(game) {
   const dashboardDisplayText = getAsset(game.dashboardDisplayTextId);
   dashboardDisplayText.text = '';
+  const objectivesDisplayText = getAsset(game.objectivesDisplayTextId);
+  objectivesDisplayText.text = '';
 
   const graphic = getAsset(game.dash.nearestTargetId);
   graphic.clear();

@@ -5,7 +5,7 @@ import { SCREEN_LEVEL_SELECT } from '../utils/screen';
 
 const levels = {
   all: [level001, level002],
-  availableKeys: ['level001', 'level002'],
+  availableKeys: ['level001'],
 };
 
 export function getLevelAssetKeys(levelKey) {

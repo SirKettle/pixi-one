@@ -10,6 +10,7 @@ import {
   OBJECTIVE_TYPE_ELIMINATE_ALL_HOSTILES,
 } from '../utils/objective';
 import { onCompleteLevel } from '../index';
+import { playRadioMessage } from '../../sound';
 
 const mission = generateMission({
   key: 'm1',
@@ -101,6 +102,7 @@ export default {
           title: 'Kill or be killed!',
           description: 'Eliminate all hostile targets',
           onComplete: (game) => {
+            setTimeout(() => playRadioMessage('message_we_did_it_kid_back_to_base'), 1500);
             addObjective(
               game,
               createWaypointObjective({
@@ -108,7 +110,7 @@ export default {
                 description: 'Now time to return to base',
                 waypoint: { position: { x: -3500, y: -500 }, radius: 150 },
                 onComplete: (game) => {
-                  onCompleteLevel(game);
+                  setTimeout(() => onCompleteLevel(game), 2000);
                 },
               })
             );

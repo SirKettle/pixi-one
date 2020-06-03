@@ -54,6 +54,7 @@ export default {
           waypoint: { position: { x: 7000, y: 3500 }, radius: 300 },
           onComplete: (game) => {
             playRadioMessage('message_boss_finally');
+            playPhoneMessage('message_nana_bad_news');
             addObjective(
               game,
               createWaypointObjective({
@@ -61,9 +62,7 @@ export default {
                 description: 'Now time to return to base',
                 waypoint: { position: { x: -3500, y: -500 }, radius: 150 },
                 onComplete: (game) => {
-                  playPhoneMessage('message_nana_bad_news').then(() => {
-                    onCompleteLevel(game);
-                  });
+                  setTimeout(() => onCompleteLevel(game), 2000);
                 },
               })
             );
@@ -73,8 +72,5 @@ export default {
     ),
   ],
   unlocksLevels: ['level002'],
-  soundtrack: [
-    'music-aha',
-    'music-wiffy',
-  ],
+  soundtrack: ['music-aha', 'music-wiffy'],
 };
