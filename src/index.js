@@ -50,7 +50,7 @@ function handleUserInput(game) {
     game.settings.isDebugDisplayMode = !game.settings.isDebugDisplayMode;
   }
   if (isButtonUp('c')) {
-    game.settings.isDebugCollsionMode = !game.settings.isDebugCollsionMode;
+    game.settings.isDebugCollisionMode = !game.settings.isDebugCollisionMode;
   }
   if (isButtonUp('a')) {
     toggleSound();
@@ -71,6 +71,11 @@ function mainLoop(game, ticker, delta) {
   const deltaMs = ticker.elapsedMS;
   const { screen } = game;
   const screenChange = screen !== game.prevScreen;
+
+  game.tickCount = game.tickCount + 1;
+  if (game.tickCount > 59999) {
+    game.tickCount = 0;
+  }
 
   handleUserInput(game);
 
@@ -229,12 +234,13 @@ export function initialise(gameEl) {
     },
     settings: {
       isDebugDisplayMode: true,
-      isDebugCollsionMode: false,
+      isDebugCollisionMode: false,
     },
     handlers: {
       onPauseToggle,
       onQuit,
     },
+    tickCount: 0
   };
 
   // todo: remove - just for debugging

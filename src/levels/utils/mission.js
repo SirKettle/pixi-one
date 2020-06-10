@@ -1,4 +1,4 @@
-import { times, unnest } from 'ramda';
+import { omit, pathOr, propOr, times, unnest } from 'ramda';
 import { getRandomInt } from '../../utils/random';
 
 export const ORDER = {
@@ -20,6 +20,14 @@ export const getOrder = ({ type = ORDER.PATROL, points = getRandomPoints() }) =>
   };
 };
 
+export const adjustPoint = (data, i = 0) => {
+  return {
+    ...data,
+    x: data.x + i * 100,
+    y: data.y + i * 100,
+  };
+};
+
 export function generateMission({
   key,
   description = '',
@@ -27,6 +35,7 @@ export function generateMission({
   objectives = [],
   player,
   actors = [],
+  actorGroups = [],
   randomActors = [],
   passive = [],
   randomPassive = [],
@@ -47,6 +56,20 @@ export function generateMission({
             y: getRandomInt(-2000, 2000),
             ...data,
           }))(data.count || 1)
+        )
+      ),
+      ...unnest(
+        actorGroups.map((data) =>
+          times(() => ({
+            ai: true,
+            x: getRandomInt(-2000, 2000),
+            y: getRandomInt(-2000, 2000),
+            ...omit(['count'])(data),
+            order: {
+              ...propOr({}, 'order')(data),
+              points: pathOr([], ['order', 'points'])(data).map(adjustPoint),
+            },
+          }))(data.count || 1).map(adjustPoint)
         )
       ),
     ],

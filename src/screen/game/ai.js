@@ -29,45 +29,44 @@ const fire = (game, host) => () => {
 
 export function updateActorAi(game, actor, delta, deltaMs) {
   if (!path(['data', 'currentOrder'])(actor)) {
-    actor.data.currentOrder = getOrder({});
+    actor.data.currentOrder = getOrder(pathOr({}, ['data', 'order'])(actor));
   }
-  const order = path(['data', 'currentOrder'])(actor);
   const specs = getSpecs(actor.assetKey);
 
-  const { type } = order;
   const potentialTargets = getAllActorsInTeams(game, path(['data', 'hostileTeams'])(actor));
 
-  //TODO: only go through this if on screen? Try turning off AI to see impact on performance?
-  // if it does decrease, maybe only check some things periodically
   const sortedPotentialTargets = potentialTargets.sort(sortByNearest(actor));
   const nearestTarget = sortedPotentialTargets[0];
 
-  if (type === ORDER.PATROL) {
-    updatePatrol({
-      game,
-      actor,
-      nearestTarget,
-      order,
-      specs,
-      delta,
-      deltaMs,
-    });
-  }
+  const orderType = path(['data', 'currentOrder', 'type'])(actor);
 
-  if (type === ORDER.ATTACK) {
-    updateAttack({
-      game,
-      actor,
-      nearestTarget,
-      order,
-      specs,
-      delta,
-      deltaMs,
-    });
+  switch (orderType) {
+    case ORDER.PATROL: {
+      updatePatrol({
+        game,
+        actor,
+        nearestTarget,
+        specs,
+        delta,
+        deltaMs,
+      });
+      return;
+    }
+    case ORDER.ATTACK: {
+      updateAttack({
+        game,
+        actor,
+        nearestTarget,
+        specs,
+        delta,
+        deltaMs,
+      });
+      return;
+    }
   }
 }
 
-function updateAttack({ game, actor, order, specs, delta, deltaMs, nearestTarget }) {
+function updateAttack({ game, actor, specs, delta, deltaMs, nearestTarget }) {
   if (nearestTarget) {
     const targetInfo = getTargetInfo(actor, nearestTarget.data);
 
@@ -81,26 +80,25 @@ function updateAttack({ game, actor, order, specs, delta, deltaMs, nearestTarget
       return;
     }
   }
-  // console.log('switch order to patrol');
-  order.type = ORDER.PATROL;
+  // console.log('switch order to patrol', actor.uid);
+  actor.data.currentOrder.type = ORDER.PATROL;
 }
 
-function updatePatrol({ game, actor, order, specs, delta, deltaMs, nearestTarget }) {
-  const { points, currentPointIndex } = order;
+function updatePatrol({ game, actor, specs, delta, deltaMs, nearestTarget }) {
+  const { points, currentPointIndex } = actor.data.currentOrder;
 
   const wayPoint = points[currentPointIndex];
 
   if (nearestTarget) {
     const targetInfo = getTargetInfo(actor, nearestTarget.data);
     if (
-      targetInfo.inRadarRange &&
-      actor.assetKey !== 'starDestroyer'
+      targetInfo.inRadarRange
       // && actor.assetKey !== 'tCraft'
     ) {
       //  attack player or maybe follow player then attack?
 
-      order.type = ORDER.ATTACK;
-      // console.log('switch order to Attack');
+      actor.data.currentOrder.type = ORDER.ATTACK;
+      // console.log('switch order to Attack', actor.uid);
       return;
     }
   }
@@ -110,13 +108,10 @@ function updatePatrol({ game, actor, order, specs, delta, deltaMs, nearestTarget
   const wayPointTargetInfo = getTargetInfo(actor, wayPoint);
   moveTowards(actor, wayPoint, wayPointTargetInfo, specs, delta);
 
-  // move to the main update? or split patrol and attack
   if (wayPointTargetInfo.inCloseRange) {
-    if (order.type === ORDER.PATROL) {
-      order.currentPointIndex += 1;
-      if (!order.points[order.currentPointIndex]) {
-        order.currentPointIndex = 0;
-      }
+    actor.data.currentOrder.currentPointIndex += 1;
+    if (!actor.data.currentOrder.points[actor.data.currentOrder.currentPointIndex]) {
+      actor.data.currentOrder.currentPointIndex = 0;
     }
   }
 }
@@ -135,17 +130,23 @@ function turnTowards(actor, vTarget, specs, delta) {
   const sprite = getAsset(actor.spriteId);
   const targetDirection = getDirection(actor.data, vTarget);
   const rotationChange = targetDirection - actor.data.rotation;
-  const turnBy = Math.min(1, Math.abs(rotationChange) * pathOr(1, ['thrust', 'turn'])(specs));
+  const absRotationChangeDeltaApplied = Math.abs(rotationChange) * delta * 0.1;
+  const turnBy = Math.min(
+    1,
+    Math.min(
+      absRotationChangeDeltaApplied,
+      absRotationChangeDeltaApplied * pathOr(1, ['thrust', 'turn'])(specs)
+    )
+  );
   const turningLeft = shouldTurnLeft(rotationChange);
   const adjTurnBy = turningLeft ? -turnBy : turnBy;
 
-  actor.data.rotation = normalizeDirection(actor.data.rotation + adjTurnBy * delta * 0.1);
+  actor.data.rotation = normalizeDirection(actor.data.rotation + adjTurnBy);
   sprite.rotation = actor.data.rotation;
 }
 
 function moveTowards(actor, vTarget, targetInfo, specs, delta) {
   turnTowards(actor, vTarget, specs, delta);
-  const { currentOrder } = actor.data;
 
   applyThrusters({
     actor,

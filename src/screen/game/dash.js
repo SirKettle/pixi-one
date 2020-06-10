@@ -1,4 +1,4 @@
-import { path, propEq } from 'ramda';
+import { path, prop, propEq } from 'ramda';
 import {
   drawHitCircles,
   getAllActorsInTeams,
@@ -7,7 +7,10 @@ import {
 } from '../../utils/actor';
 import { GREEN, ORANGE, RED, WHITE, YELLOW } from '../../constants/color';
 import { drawCircle, drawDirection, drawNavigationArrow } from '../../utils/graphics';
-import { OBJECTIVE_TYPE_GO_TO_WAYPOINT } from '../../levels/utils/objective';
+import {
+  OBJECTIVE_TYPE_ELIMINATE_TARGET,
+  OBJECTIVE_TYPE_GO_TO_WAYPOINT,
+} from '../../levels/utils/objective';
 import { getAsset } from '../../utils/assetStore';
 import { onResetText, onUpdateText } from '../../utils/animateText';
 
@@ -18,8 +21,6 @@ export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, f
   const playerSprite = getAsset(player.spriteId);
   const spriteRadius = getSpriteRadius(playerSprite);
   const graphic = getAsset(player.graphicId);
-
-  graphic.clear();
 
   const minRadius = spriteRadius * 1.4 + 10;
   const firePowerLineWidth = firePower * 32;
@@ -141,28 +142,57 @@ export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, f
   }
 
   currentObjectives.forEach((objective) => {
-    if (propEq('type', OBJECTIVE_TYPE_GO_TO_WAYPOINT)(objective)) {
-      const targetPoint = path(['waypoint', 'position'])(objective);
-      if (!targetPoint) {
-        return;
+    switch (prop('type')(objective)) {
+      case OBJECTIVE_TYPE_GO_TO_WAYPOINT: {
+        const targetPoint = path(['waypoint', 'position'])(objective);
+        if (!targetPoint) {
+          break;
+        }
+
+        const pulseVariant = sinVariant * 6;
+
+        drawNavigationArrow({
+          graphic,
+          actor: player,
+          targetPoint,
+          color: ORANGE,
+          startRadius: targetRadius - 15 - pulseVariant * 0.25,
+          lineWidth: 3 + sinVariant,
+          length: 30 + pulseVariant,
+          alpha: 0.5 + sinVariant * 0.25,
+        });
+        break;
       }
 
-      const pulseVariant = sinVariant * 6;
+      case OBJECTIVE_TYPE_ELIMINATE_TARGET: {
+        const target = game.actors.find(propEq('uid', prop('target')(objective)));
 
-      drawNavigationArrow({
-        graphic,
-        actor: player,
-        targetPoint,
-        color: ORANGE,
-        startRadius: targetRadius - 15 - pulseVariant * 0.25,
-        lineWidth: 3 + sinVariant,
-        length: 30 + pulseVariant,
-        alpha: 0.5 + sinVariant * 0.25,
-      });
+        if (!target) {
+          break;
+        }
+
+        const pulseVariant = sinVariant * 6;
+
+        drawNavigationArrow({
+          graphic,
+          actor: player,
+          targetPoint: target.data,
+          color: RED,
+          startRadius: targetRadius - 15 - pulseVariant * 0.25,
+          lineWidth: 3 + sinVariant,
+          length: 30 + pulseVariant,
+          alpha: 0.5 + sinVariant * 0.25,
+        });
+        break;
+      }
+
+      default: {
+        break;
+      }
     }
   });
 
-  if (game.settings.isDebugCollsionMode) {
-    drawHitCircles(player);
+  if (game.settings.isDebugCollisionMode) {
+    drawHitCircles(game, player);
   }
 }

@@ -30,11 +30,11 @@ const mission = generateMission({
     {
       team: 'bad',
       assetKey: 'starDestroyer',
-      hostileTeams: ['good'],
+      hostileTeams: [],
       ai: true,
       x: 1000,
       y: 1000,
-      currentOrder: getOrder({
+      order: getOrder({
         type: ORDER.PATROL,
         points: [
           { x: 800, y: 600 },
@@ -54,7 +54,7 @@ const mission = generateMission({
         x: -1,
         y: -1.5,
       },
-      currentOrder: getOrder({
+      order: getOrder({
         type: ORDER.PATROL,
         points: [
           { x: -1100, y: 1600 },
@@ -119,7 +119,7 @@ export default {
       4000
     ),
   ],
-  unlocksLevels: [],
+  unlocksLevels: ['level003'],
   soundtrack: [
     'music-wiffy',
     //'transition-wiffy2aha',

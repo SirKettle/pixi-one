@@ -1,7 +1,8 @@
+import { pathEq } from 'ramda';
+import { Graphics } from 'pixi.js';
 import { getAsset } from '../../utils/assetStore';
 import { createActor, createTile, updateActors, updateTiles } from './actor';
 import { updatePauseScreen } from './pauseScreen';
-import { pathEq } from 'ramda';
 import { getLevel } from '../../levels';
 import { updatePlayer } from './player';
 import { handleCollisions } from './collision';
@@ -35,6 +36,9 @@ function addLevelAssets(game) {
     direction: 0,
     distanceFromCenter: 0,
   });
+  const graphic = new Graphics();
+  worldNear.addChild(graphic);
+  game.player.graphicId = setAsset(graphic, { removable: true });
 
   game.time.paused = false;
 
@@ -63,6 +67,9 @@ export function onUpdate(game, delta, deltaMs) {
 
   const player = game.player;
   const level = getLevel(game.levelKey);
+
+  const playerGraphic = getAsset(game.player.graphicId);
+  playerGraphic.clear();
 
   // 1. Update Actors position
   updateActors(game.bullets, level, delta, deltaMs, game);

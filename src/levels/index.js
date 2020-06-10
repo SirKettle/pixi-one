@@ -1,11 +1,12 @@
 import { path, prop, propEq, propOr, uniq } from 'ramda';
 import level001 from './data/001';
 import level002 from './data/002';
+import level003 from './data/003';
 import { SCREEN_LEVEL_SELECT } from '../utils/screen';
 
 const levels = {
-  all: [level001, level002],
-  availableKeys: ['level001'],
+  all: [level001, level002, level003],
+  availableKeys: ['level001', 'level002', 'level003'],
 };
 
 export function getLevelAssetKeys(levelKey) {

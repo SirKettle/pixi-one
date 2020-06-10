@@ -36,7 +36,7 @@ export default {
       {
         team: 'bad',
         assetKey: 'starDestroyer',
-        hostileTeams: ['good'],
+        hostileTeams: [],
         ai: false,
         x: 1000,
         y: 1000,

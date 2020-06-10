@@ -1,5 +1,5 @@
 import { v4 as generateUid } from 'uuid';
-import { path, pathEq, pathOr, propEq, propOr } from 'ramda';
+import { path, pathEq, pathOr, prop, propEq, propOr } from 'ramda';
 import { drawCircle } from '../../utils/graphics';
 import { ORANGE } from '../../constants/color';
 import { getDistance } from '../../utils/physics';
@@ -61,41 +61,57 @@ export function updateObjectives(game, delta, deltaMs, sinVariant) {
     .filter(propEq('isFail', false));
 
   currentObjectives.forEach((objective) => {
-    if (propEq('type', OBJECTIVE_TYPE_GO_TO_WAYPOINT)(objective)) {
-      const targetPoint = path(['waypoint', 'position'])(objective);
-      if (!targetPoint) {
-        return;
-      }
-      const distance = getDistance(game.player.data, targetPoint);
-      const targetRadius = pathOr(25, ['waypoint', 'radius'])(objective);
-      if (distance < targetRadius) {
-        objective.isComplete = true;
-        objective.onComplete(game);
+    switch (prop('type')(objective)) {
+      case OBJECTIVE_TYPE_GO_TO_WAYPOINT: {
+        const targetPoint = path(['waypoint', 'position'])(objective);
+        if (!targetPoint) {
+          break;
+        }
+        const distance = getDistance(game.player.data, targetPoint);
+        const targetRadius = pathOr(25, ['waypoint', 'radius'])(objective);
+        if (distance < targetRadius) {
+          objective.isComplete = true;
+          objective.onComplete(game);
+        }
+
+        // replace with isOnScreen util method
+        if (distance < 1500) {
+          drawCircle({
+            graphic,
+            lineWidth: 2,
+            lineColor: ORANGE,
+            lineAlpha: 0.5,
+            fillColor: ORANGE,
+            fillAlpha: 0.1 + 0.025 * sinVariant,
+            x: targetPoint.x,
+            y: targetPoint.y,
+            radius: targetRadius,
+          });
+        }
+
+        break;
       }
 
-      // replace with isOnScreen util method
-      if (distance < 1500) {
-        drawCircle({
-          graphic,
-          lineWidth: 2,
-          lineColor: ORANGE,
-          lineAlpha: 0.5,
-          fillColor: ORANGE,
-          fillAlpha: 0.1 + 0.025 * sinVariant,
-          x: targetPoint.x,
-          y: targetPoint.y,
-          radius: targetRadius,
-        });
+      case OBJECTIVE_TYPE_ELIMINATE_TARGET: {
+        const target = game.actors.find(propEq('uid', prop('target')(objective)));
+
+        if (!target) {
+          objective.isComplete = true;
+          objective.onComplete(game);
+        }
+
+        break;
       }
-    }
 
-    if (propEq('type', OBJECTIVE_TYPE_ELIMINATE_ALL_HOSTILES)(objective)) {
-      const hostileTeams = game.player.data.hostileTeams || [];
-      const hostileCount = getAllActorsInTeams(game, hostileTeams).length;
+      case OBJECTIVE_TYPE_ELIMINATE_ALL_HOSTILES: {
+        const hostileTeams = game.player.data.hostileTeams || [];
+        const hostileCount = getAllActorsInTeams(game, hostileTeams).length;
 
-      if (hostileCount <= 0) {
-        objective.isComplete = true;
-        objective.onComplete(game);
+        if (hostileCount <= 0) {
+          objective.isComplete = true;
+          objective.onComplete(game);
+        }
+        break;
       }
     }
   });

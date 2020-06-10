@@ -1,12 +1,7 @@
 import { path, pathOr, propEq } from 'ramda';
 import { getAsset } from './assetStore';
 import { getSpecs } from '../specs/getSpecs';
-import {
-  combineVelocity,
-  getDistance,
-  getVelocity,
-  relativeVelocity,
-} from './physics';
+import { getDistance, getVelocity, relativeVelocity } from './physics';
 import { drawCircle } from './graphics';
 
 export const getActorByUid = ({ player, actors, bullets }) => (uid) => {
@@ -20,17 +15,13 @@ export const getActorByUid = ({ player, actors, bullets }) => (uid) => {
 
 export const getActorRadius = ({ assetKey, spriteId }) => {
   const specs = getSpecs(assetKey);
-  return getSpriteRadius(
-    getAsset(spriteId),
-    path(['hitArea', 'basic', 'radius'])(specs)
-  );
+  return getSpriteRadius(getAsset(spriteId), path(['hitArea', 'basic', 'radius'])(specs));
 };
 
 export const getSpriteRadius = (sprite, percentage = 0.5) =>
   Math.max(sprite.width, sprite.height) * percentage;
 
-export const getAllActors = (game) =>
-  game.actors.concat(game.bullets, [game.player]);
+export const getAllActors = (game) => game.actors.concat(game.bullets, [game.player]);
 
 export const getAllActorsInTeams = (game, teams = []) => {
   const allActors = getAllActors(game);
@@ -57,8 +48,8 @@ export function getPrecisionHitCircles(actor) {
   });
 }
 
-export const drawHitCircles = (actor) => {
-  const graphic = getAsset(actor.graphicId);
+export const drawHitCircles = (game, actor) => {
+  const graphic = getAsset(game.player.graphicId);
 
   drawCircle({
     graphic,
@@ -76,3 +67,42 @@ export const drawHitCircles = (actor) => {
     });
   });
 };
+
+// For performance, we do not want to check collisions or update the AI
+// of all actors in every tick. Instead, we update objects more frequently
+// based on how close they are to the camera/player
+const updateRanges = {
+  close: {
+    range: 500,
+    updateFrequency: {
+      collision: 1,
+      ai: 3,
+    },
+  },
+  mid: {
+    range: 900,
+    updateFrequency: {
+      collision: 5,
+      ai: 10,
+    },
+  },
+  far: {
+    updateFrequency: {
+      collision: 60,
+      ai: 25,
+    },
+  },
+};
+
+export const getUpdateFrequency = (range, type = 'ai') => {
+  if (range < pathOr(500, ['close', 'range'])(updateRanges)) {
+    return pathOr(1, ['close', 'updateFrequency', type])(updateRanges);
+  }
+  if (range < pathOr(600, ['mid', 'range'])(updateRanges)) {
+    return pathOr(1, ['mid', 'updateFrequency', type])(updateRanges);
+  }
+  return pathOr(1, ['far', 'updateFrequency', type])(updateRanges);
+};
+
+export const getShouldUpdate = (game, index, updateFrequency) =>
+  (game.tickCount + index) % updateFrequency === 0;

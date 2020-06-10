@@ -8,7 +8,13 @@ import {
   getVelocity,
   relativeVelocity,
 } from '../../utils/physics';
-import { getActorByUid, getAllActors, getPrecisionHitCircles } from '../../utils/actor';
+import {
+  getActorByUid,
+  getAllActors,
+  getPrecisionHitCircles,
+  getShouldUpdate,
+  getUpdateFrequency,
+} from '../../utils/actor';
 import { playSound } from '../../sound';
 import { getAsset } from '../../utils/assetStore';
 import { addExplosion } from '../../utils/particle';
@@ -114,28 +120,23 @@ export function getActorDamage({ data }, speed) {
   return Math.max(0, adj);
 }
 
-// const collisionPairs = (actors) =>
-//   actors
-//     .map((actor) =>
-//       actors
-//         .filter((actorB) => isCollision(actor, actorB))
-//         .map((actorB) => [actor.uid, actorB.uid].sort())
-//     )
-//     .filter((pairs) => pairs.length > 0);
-//
-// export const getUniqCollisionPairs = compose(uniq, unnest, collisionPairs);
-
-function getUniqCollisionPairs(actors) {
+function getUniqCollisionPairs(game, actors) {
   const pairs = [];
   let i, j;
   const actorsCount = actors.length;
   for (i = 0; i < actorsCount; i++) {
     const actorA = actors[i];
-    for (j = 0; j < actorsCount; j++) {
-      const actorB = actors[j];
-      if (isCollision(actorA, actorB)) {
-        const pair = [actorA.uid, actorB.uid].sort();
-        pairs.push(pair);
+
+    const updateFrequency = getUpdateFrequency(actorA.data.distanceFromCenter, 'collision');
+    const shouldCheckCollisions = getShouldUpdate(game, i, updateFrequency);
+
+    if (shouldCheckCollisions) {
+      for (j = 0; j < actorsCount; j++) {
+        const actorB = actors[j];
+        if (isCollision(actorA, actorB)) {
+          const pair = [actorA.uid, actorB.uid].sort();
+          pairs.push(pair);
+        }
       }
     }
   }
@@ -145,8 +146,8 @@ function getUniqCollisionPairs(actors) {
 
 export function handleCollisions(game) {
   const allActors = getAllActors(game);
-  const uniqCollisionPairs = getUniqCollisionPairs(allActors);
-  // return;
+
+  const uniqCollisionPairs = getUniqCollisionPairs(game, allActors);
 
   if (uniqCollisionPairs.length) {
     uniqCollisionPairs.forEach(([aUid, bUid]) => {

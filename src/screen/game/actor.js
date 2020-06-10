@@ -1,4 +1,4 @@
-import { path, pathOr, prop, propEq, propOr } from 'ramda';
+import { omit, path, pathOr, prop, propEq, propOr, range } from 'ramda';
 import { v4 as generateUid } from 'uuid';
 import { Graphics, Sprite, TilingSprite } from 'pixi.js';
 import { getAsset, removeAsset, setAsset } from '../../utils/assetStore';
@@ -12,7 +12,12 @@ import {
   normalizeDirection,
 } from '../../utils/physics';
 import { updateActorAi } from './ai';
-import { drawHitCircles, getActorRadius } from '../../utils/actor';
+import {
+  drawHitCircles,
+  getActorRadius,
+  getShouldUpdate,
+  getUpdateFrequency,
+} from '../../utils/actor';
 import { addExplosion } from '../../utils/particle';
 
 export const createTile = (app, container) => (tile) => {
@@ -52,11 +57,10 @@ export const initActor = ({ assetKey, overrides = {}, uid }) => {
   sprite.position.set(data.x, data.y); // maybe don't even need this?
 
   return {
-    uid: uid || generateUid(),
+    uid: uid || data.uid || generateUid(),
     assetKey,
-    data,
+    data: omit(['uid'])(data),
     spriteId: setAsset(sprite, { removable: true }),
-    graphicId: setAsset(new Graphics(), { removable: true }),
   };
 };
 
@@ -69,9 +73,7 @@ export const createActor = (container) => (data) => {
     },
   });
   container.addChild(getAsset(actor.spriteId));
-  if (actor.graphicId) {
-    container.addChild(getAsset(actor.graphicId));
-  }
+
   const specs = getSpecs(assetKey);
   actor.performance = {
     radiusPx: getActorRadius(actor),
@@ -137,16 +139,20 @@ export function updateTiles(tiles, offsetPoint) {
 export const updateActors = (actors, level, delta, deltaMs, game) => {
   actors.forEach((actor, index) => {
     const { data, graphicId, performance, spriteId } = actor;
-    getAsset(graphicId).clear();
 
     if (data.ai) {
-      updateActorAi(game, actor, delta, deltaMs);
+      const updateFrequency = getUpdateFrequency(data.distanceFromCenter, 'ai');
+      const shouldUpdate = getShouldUpdate(game, index, updateFrequency);
+      if (shouldUpdate) {
+        updateActorAi(game, actor, delta * updateFrequency, deltaMs * updateFrequency);
+      }
     }
 
     updateActorPosition(actor, level, delta);
+    data.distanceFromCenter = getDistance(game.player.data, data);
 
-    if (game.settings.isDebugCollsionMode) {
-      drawHitCircles(actor);
+    if (game.settings.isDebugCollisionMode) {
+      drawHitCircles(game, actor);
     }
 
     const sprite = getAsset(spriteId);
@@ -155,8 +161,6 @@ export const updateActors = (actors, level, delta, deltaMs, game) => {
     if (data.isBullet) {
       data.life -= delta * 0.1;
       sprite.alpha = data.life;
-    } else {
-      data.distanceFromCenter = getDistance(game.player.data, data);
     }
 
     if (data.life <= 0) {
