@@ -1,5 +1,7 @@
 import { prop } from 'ramda';
+import { AudioContext, decodeAudioData } from 'standardized-audio-context';
 import { getKey, saveKey } from './store';
+import unlockAudioContext from './unlockAudioContext';
 
 import new_message from '../assets/audio/message/_new_message.mp3';
 import end_of_message from '../assets/audio/message/_end_of_message.mp3';
@@ -19,8 +21,8 @@ import wiffyInstrumentalSrc from '../assets/audio/music/wiffy-instrumental-64kBi
 import ahahaSrc from '../assets/audio/music/ahahahaaa-64kBits.mp3';
 import episode24Src from '../assets/audio/music/episode24.mp3';
 
-import bigLaser from '../assets/audio/sfx/quaddamage_shoot.ogg';
-import laser from '../assets/audio/sfx/quaddamage_out.ogg';
+import bigLaser from '../assets/audio/sfx/quaddamage_shoot.mp3';
+import laser from '../assets/audio/sfx/quaddamage_out.mp3';
 import laserHit from '../assets/audio/sfx/explosion_small.mp3';
 import bigLaserHit from '../assets/audio/sfx/explosion_underwater_distant.mp3';
 import explosion from '../assets/audio/sfx/explosion_large_distant.mp3';
@@ -66,9 +68,20 @@ export function getSettings() {
   return { ...audioSettings };
 }
 
-// for cross browser compatibility
-const AudioContext = window.AudioContext || window.webkitAudioContext;
 const audioCtx = new AudioContext();
+
+unlockAudioContext(audioCtx).then(
+  function (unlocked) {
+    if (unlocked) {
+      console.log('audio unlocked');
+    } else {
+      console.log('no need to unlock audio - as you were');
+    }
+  },
+  function (reason) {
+    console.error(reason);
+  }
+);
 
 const musicGainNode = audioCtx.createGain();
 musicGainNode.gain.value = audioSettings.masterVol * audioSettings.musicVol;
@@ -76,7 +89,7 @@ musicGainNode.gain.value = audioSettings.masterVol * audioSettings.musicVol;
 async function getFile(filepath) {
   const response = await fetch(filepath);
   const arrayBuffer = await response.arrayBuffer();
-  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  const audioBuffer = await decodeAudioData(audioCtx, arrayBuffer);
   return audioBuffer;
 }
 
