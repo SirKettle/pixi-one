@@ -6,6 +6,7 @@ import {
   getReverseThruster,
   getStrafeThruster,
   getTurnThruster,
+  getJoystick,
   isButtonUp,
 } from '../../input';
 import { updateTexture } from '../../utils/textures';
@@ -14,7 +15,7 @@ import { normalizeDirection } from '../../utils/physics';
 import { generateBulletData } from '../../specs/bullets';
 import { getSpecs } from '../../specs/getSpecs';
 import { playSound } from '../../sound';
-import { applyThrusters, createActor, updateActorPosition } from './actor';
+import { applyThrusters, createActor, moveTowardsDirection, updateActorPosition } from './actor';
 import { updateDash } from './dash';
 import { SCREEN_LEVEL_SELECT } from '../../utils/screen';
 
@@ -24,37 +25,45 @@ export function updatePlayer({ game, level, delta, deltaMs, sinVariant }) {
   const playerSprite = getAsset(player.spriteId);
   const world = getAsset(game.containers.world);
 
-  // a) turn thrusters to rotate player
-  const turnThruster = getTurnThruster();
-  const minTurnThrust = 0.3;
-  const hardTurnThrust = 0.9; // just for texture frame;
-  const isTurning = Math.abs(turnThruster) > minTurnThrust;
-
-  if (isTurning) {
-    const isHardTurn = Math.abs(turnThruster) > hardTurnThrust;
-    const leftTurn = turnThruster < 0;
-    if (leftTurn) {
-      updateTexture(player, isHardTurn ? 'hardLeft' : 'left');
-    } else {
-      updateTexture(player, isHardTurn ? 'hardRight' : 'right');
-    }
-    // todo: replace hard coded turn speed with settings/data
-    player.data.rotation = normalizeDirection(
-      player.data.rotation + turnThruster * 0.1 * delta * pathOr(1, ['thrust', 'turn'])(playerSpecs)
-    );
-    playerSprite.rotation = player.data.rotation;
+  const joystick = getJoystick();
+  if (joystick) {
+    moveTowardsDirection(player, joystick.direction, playerSpecs, delta, joystick.force);
   } else {
-    updateTexture(player, 'DEFAULT');
-  }
+    // a) turn thrusters to rotate player
+    const turnThruster = getTurnThruster();
+    const minTurnThrust = 0.3;
+    const hardTurnThrust = 0.9; // just for texture frame;
+    const isTurning = Math.abs(turnThruster) > minTurnThrust;
 
-  // b) thrusters to move player
-  applyThrusters({
-    actor: player,
-    delta,
-    thrustDirection: 'forward',
-    forward: getForwardThruster() - getReverseThruster(),
-    side: getStrafeThruster(),
-  });
+    if (isTurning) {
+      const isHardTurn = Math.abs(turnThruster) > hardTurnThrust;
+      const leftTurn = turnThruster < 0;
+      if (leftTurn) {
+        updateTexture(player, isHardTurn ? 'hardLeft' : 'left');
+      } else {
+        updateTexture(player, isHardTurn ? 'hardRight' : 'right');
+      }
+      // todo: replace hard coded turn speed with settings/data
+      player.data.rotation = normalizeDirection(
+        player.data.rotation +
+          turnThruster * 0.1 * delta * pathOr(1, ['thrust', 'turn'])(playerSpecs)
+      );
+      playerSprite.rotation = player.data.rotation;
+    } else {
+      updateTexture(player, 'DEFAULT');
+    }
+
+    // look for keyboard thrusters
+    applyThrusters({
+      actor: player,
+      delta,
+      thrustDirection: 'forward',
+      forward:
+        pathOr(0.1, ['thrust', 'forward'])(playerSpecs) *
+        (getForwardThruster() - getReverseThruster()),
+      side: getStrafeThruster(),
+    });
+  }
 
   updateActorPosition(player, level, delta);
 

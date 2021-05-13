@@ -2,24 +2,109 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pixi One" />
+    <meta
+      name="viewport"
+      content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no"
+    />
     <title>Pixi One - without React</title>
     <link rel="shortcut icon" href="favicon.png" />
+    <link rel="apple-touch-icon" href="favicon.png" />
+    <link rel="apple-touch-startup-image" href="favicon.png" />
     <style>
       html,
       body {
         margin: 0;
         padding: 0;
+        -webkit-touch-callout: none;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         background: black;
+        background: #333333;
       }
+
+      .game-wrapper {
+        margin: 0;
+        padding: 0;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: blue;
+      }
+
       canvas {
         display: block;
+        position: relative;
         margin: 0;
         padding: 0;
         background: black;
       }
+
+      .disable-selection {
+        -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari */
+        -khtml-user-select: none; /* Konqueror HTML */
+        -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .disable-dbl-tap-zoom {
+        touch-action: manipulation;
+      }
+
+      .virtual-gamepad {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 50%;
+      }
+
+      .virtual-gamepad.active {
+        display: block;
+      }
+
+      .virtual-joystick {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+      }
+
+      .nipple {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .nipple .front {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .nipple .back {
+        -webkit-tap-highlight-color: transparent;
+      }
     </style>
   </head>
   <body>
-    <canvas id="game"></canvas>
+    <div id="gameWrapper" class="game-wrapper disable-selection disable-dbl-tap-zoom">
+      <canvas id="game" class="disable-selection disable-dbl-tap-zoom"></canvas>
+      <div id="virtual_gamepad" class="virtual-gamepad disable-selection disable-dbl-tap-zoom">
+        <div
+          id="virtual_joystick"
+          class="virtual-joystick disable-selection disable-dbl-tap-zoom"
+        ></div>
+      </div>
+    </div>
   </body>
 </html>

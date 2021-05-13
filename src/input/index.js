@@ -1,8 +1,10 @@
-import { path, pathEq, pathOr, propEq, propOr } from 'ramda';
+import { path, pathEq, pathOr, prop, propEq, propOr } from 'ramda';
+import { getAxisIndexMap, getButtonIndicesFireOne } from './data/gamepadMappings';
 import {
-  getAxisIndexMap,
-  getButtonIndicesFireOne,
-} from './data/gamepadMappings';
+  getAxisData as getVirtualGamepadAxisData,
+  getButtonsData as getVirtualGamepadButtonsData,
+} from './virtualGamepad';
+import { normalizeDirection } from '../utils/physics';
 
 export const FIRE_ONE = '_FIRE_ONE';
 
@@ -125,10 +127,9 @@ function updateButtonState(key, isPressed, deltaMs) {
 }
 
 function getButtonState(key) {
-  return pathOr(
-    pathOr({ ...defaultButtonState }, ['buttons', key])(gamepadCache),
-    ['keys', key]
-  )(gamepadCache);
+  return pathOr(pathOr({ ...defaultButtonState }, ['buttons', key])(gamepadCache), ['keys', key])(
+    gamepadCache
+  );
 }
 
 function isButtonStatus(key, status) {
@@ -166,6 +167,10 @@ export function getStrafeThruster() {
   return pathOr(0, ['thruster', 'strafe'])(gamepadCache);
 }
 
+export function getJoystick() {
+  return prop('joystick')(gamepadCache);
+}
+
 // This is to prevent accidental thrust and also calibration quirks
 const MIN_AXIS_VALUE = 0.4;
 function throttleAxisValue(val = 0, minVal = MIN_AXIS_VALUE) {
@@ -174,47 +179,80 @@ function throttleAxisValue(val = 0, minVal = MIN_AXIS_VALUE) {
 
 function getForwardThrust(axes, axisIndexMap) {
   const kVal = isButtonDown('ArrowUp') ? -1 : isButtonDown('ArrowDown') ? 1 : 0;
-  if (axes && axisIndexMap) {
-    const gamepadVal = throttleAxisValue(axes[axisIndexMap.forward]);
-    return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
-  }
+  // const virtualGamepad = getVirtualGamepadData();
+  //
+  // if (virtualGamepad && typeof virtualGamepad.y === 'number') {
+  //   return virtualGamepad.y;
+  // }
+
+  // if (axes && axisIndexMap) {
+  //   const gamepadVal = throttleAxisValue(axes[axisIndexMap.forward]);
+  //   return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
+  // }
+
   return kVal;
 }
 
 function getTurnThrust(axes, axisIndexMap) {
-  const kVal = isButtonDown('ArrowLeft')
-    ? -1
-    : isButtonDown('ArrowRight')
-    ? 1
-    : 0;
-  if (axes && axisIndexMap) {
-    const gamepadVal = throttleAxisValue(axes[axisIndexMap.turn]);
-    return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
-  }
+  const kVal = isButtonDown('ArrowLeft') ? -1 : isButtonDown('ArrowRight') ? 1 : 0;
+  // const virtualGamepad = getVirtualGamepadData();
+  //
+  // if (virtualGamepad && typeof virtualGamepad.x === 'number') {
+  //   return virtualGamepad.x;
+  // }
+
+  // if (axes && axisIndexMap) {
+  //   const gamepadVal = throttleAxisValue(axes[axisIndexMap.turn]);
+  //   return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
+  // }
   return kVal;
 }
 
 function getStrafeThrust(axes, axisIndexMap) {
   const kVal = isButtonDown('z') ? -1 : isButtonDown('x') ? 1 : 0;
-  if (axes && axisIndexMap) {
-    const gamepadVal = throttleAxisValue(axes[axisIndexMap.strafe]);
-    return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
-  }
+  // if (axes && axisIndexMap) {
+  //   const gamepadVal = throttleAxisValue(axes[axisIndexMap.strafe]);
+  //   return Math.abs(kVal) > Math.abs(gamepadVal) ? kVal : gamepadVal;
+  // }
   return kVal;
+}
+
+function getJoystickValues(axes, axisIndexMap, virtualGamepadAxisData) {
+  if (axes && axisIndexMap) {
+    const x = axes[axisIndexMap.turn];
+    const y = axes[axisIndexMap.forward];
+    const force = Math.hypot(x, y);
+
+    if (force < 0.4) {
+      return;
+    }
+
+    const gamepad = {
+      x,
+      y,
+      force,
+      direction: normalizeDirection(Math.atan2(y, x) + Math.PI * 0.5),
+    };
+
+    return gamepad;
+  }
+
+  return virtualGamepadAxisData;
 }
 
 export function onUpdate(deltaMs) {
   const gamepad = navigator.getGamepads()[0] || {};
+  const virtualGamepadButtons = getVirtualGamepadButtonsData();
+
   setGamepadType(gamepad);
 
   const { axes, buttons } = gamepad;
   const prevState = { ...gamepadCache };
 
   const fireOnePressed =
-    someButtonsPressed(
-      buttons,
-      getButtonIndicesFireOne(prevState.gamepadType)
-    ) || isButtonDown(' ');
+    someButtonsPressed(buttons, getButtonIndicesFireOne(prevState.gamepadType)) ||
+    virtualGamepadButtons.fireOneDown ||
+    isButtonDown(' ');
 
   const axisIndexMap = getAxisIndexMap(prevState.gamepadType);
   const forwardsThrustValue = getForwardThrust(axes, axisIndexMap);
@@ -241,6 +279,7 @@ export function onUpdate(deltaMs) {
       turn: turnThrustValue, // between -1 and 1, negative is turning left
       strafe: strafeThrustValue, // between -1 and 1, negative is turning left
     },
+    joystick: getJoystickValues(axes, axisIndexMap, getVirtualGamepadAxisData()),
   };
 
   // update the cache

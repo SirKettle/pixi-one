@@ -1,5 +1,9 @@
 import { Application, BitmapText, Container, filters, Graphics } from 'pixi.js';
 import { isButtonUp, onUpdate as onUpdateInputs, subscribe as inputsSubscribe } from './input';
+import {
+  addGamepad as addVirtualGamepad,
+  removeGamepad as removeVirtualGamepad,
+} from './input/virtualGamepad';
 import fontDashDisplay from './assets/font/digital7_mono_white.xml';
 import { logGameCredits } from './utils/log';
 import { destroyAllAssets, getAsset, setAsset } from './utils/assetStore';
@@ -18,10 +22,12 @@ import { onUpdate as onUpdateLevelIntro, showLevelIntro } from './screen/levelIn
 import { showPlay, onUpdate as onUpdatePlay } from './screen/game';
 import { GREEN, ORANGE, YELLOW } from './constants/color';
 import { adjustMusicVolume, toggleMusic, toggleSound } from './sound';
+import { getDimensions, getIsMobile, isTouchDevice } from './utils/device';
 
 const gameEl = document.getElementById('game');
 
 function navigate(game) {
+  removeVirtualGamepad(game);
   switch (game.screen) {
     case SCREEN_LOADING:
       return showLoading(game);
@@ -32,6 +38,7 @@ function navigate(game) {
     case SCREEN_LEVEL_INTRO:
       return showLevelIntro(game);
     case SCREEN_PLAY:
+      addVirtualGamepad(game);
       return showPlay(game);
     default:
       console.warn('Screen not found', game.screen);
@@ -179,6 +186,8 @@ function onPauseToggle(game) {
 }
 
 function resetShared(game) {
+  const container = getAsset(game.containers.info);
+  container.removeChildren();
   const dashboardDisplayText = getAsset(game.dashboardDisplayTextId);
   dashboardDisplayText.text = '';
   const objectivesDisplayText = getAsset(game.objectivesDisplayTextId);
@@ -201,20 +210,25 @@ function onQuit(game, screen = SCREEN_NEW_GAME) {
 export function initialise(gameEl) {
   inputsSubscribe();
 
-  const app = new Application({
-    view: gameEl,
-    // width: window.innerWidth / window.devicePixelRatio,
-    // height: window.innerHeight / window.devicePixelRatio,
-    // resolution: window.devicePixelRatio,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    resolution: 1,
-    resizeTo: document.body,
-  });
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+  const isLandscape = windowWidth > windowHeight;
+
+  const dimensions = getDimensions();
+  const isMobile = getIsMobile();
+  //
+  // const dimensions = {
+  //   width: 750,
+  //   height: 350,
+  // };
+
+  if (!isLandscape && isTouchDevice()) {
+    window.alert('Please rotate your screen to landscape');
+  }
 
   // master game object
   const _game = {
-    app: setAsset(app),
+    dimensions,
     discoveredAreas: {},
     filterIds: {},
     containers: {},
@@ -240,8 +254,29 @@ export function initialise(gameEl) {
       onPauseToggle,
       onQuit,
     },
-    tickCount: 0
+    tickCount: 0,
   };
+
+  const wrapperEl = document.getElementById('gameWrapper');
+  wrapperEl.style.width = `${dimensions.width}px`;
+  wrapperEl.style.height = `${dimensions.height}px`;
+
+  const app = new Application({
+    view: gameEl,
+    // width: window.innerWidth / window.devicePixelRatio,
+    // height: window.innerHeight / window.devicePixelRatio,
+    // resolution: window.devicePixelRatio,
+    resolution: window.devicePixelRatio,
+    autoDensity: true,
+    width: dimensions.width * (isMobile ? 2 : 1),
+    height: dimensions.height * (isMobile ? 2 : 1),
+  });
+
+  if (isMobile) {
+    gameEl.style.transform = 'scale(0.5)';
+  }
+
+  _game.app = setAsset(app);
 
   // todo: remove - just for debugging
   window._game = _game;
@@ -257,6 +292,26 @@ export function initialise(gameEl) {
     // start the game loop!
     app.ticker.add((delta) => mainLoop(_game, app.ticker, delta));
   });
+
+  // function onScreenResize() {
+  //   app.resize();
+  //   _game.prevScreen = null;
+  //   // _game.screen = SCREEN_NEW_GAME;
+  //   resetShared(_game);
+  // }
+  //
+  // window.addEventListener('resize', () => {
+  //   // if (!isTouchDevice()) {
+  //   setTimeout(onScreenResize, 200);
+  //   // }
+  // });
+  // window.addEventListener('orientationchange', () => {
+  //   // if (isTouchDevice()) {
+  //   // if (window.confirm('Changing orientation resets game?')) {
+  //   setTimeout(onScreenResize, 200);
+  //   // }
+  //   // }
+  // });
 }
 
 logGameCredits();

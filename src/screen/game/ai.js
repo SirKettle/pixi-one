@@ -3,7 +3,7 @@ import { getAllActorsInTeams, sortByNearest } from '../../utils/actor';
 import { getDirection, getDistance, normalizeDirection } from '../../utils/physics';
 import { getAsset } from '../../utils/assetStore';
 import { generateBulletData } from '../../specs/bullets';
-import { applyThrusters, createActor } from './actor';
+import { applyThrusters, createActor, moveTowardsTarget, turnTowards } from './actor';
 import { doEveryMs } from '../../utils/random';
 import { getSpecs } from '../../specs/getSpecs';
 import { getOrder, ORDER } from '../../levels/utils/mission';
@@ -75,7 +75,7 @@ function updateAttack({ game, actor, specs, delta, deltaMs, nearestTarget }) {
         doEveryMs(fire(game, actor), deltaMs, 1000);
         turnTowards(actor, nearestTarget.data, specs, delta);
       } else {
-        moveTowards(actor, nearestTarget.data, targetInfo, specs, delta);
+        moveTowardsTarget(actor, nearestTarget.data, targetInfo, specs, delta);
       }
       return;
     }
@@ -106,7 +106,7 @@ function updatePatrol({ game, actor, specs, delta, deltaMs, nearestTarget }) {
   // move to wayPoint
   // console.log('move to wayPoint');
   const wayPointTargetInfo = getTargetInfo(actor, wayPoint);
-  moveTowards(actor, wayPoint, wayPointTargetInfo, specs, delta);
+  moveTowardsTarget(actor, wayPoint, wayPointTargetInfo, specs, delta);
 
   if (wayPointTargetInfo.inCloseRange) {
     actor.data.currentOrder.currentPointIndex += 1;
@@ -114,46 +114,6 @@ function updatePatrol({ game, actor, specs, delta, deltaMs, nearestTarget }) {
       actor.data.currentOrder.currentPointIndex = 0;
     }
   }
-}
-
-function shouldTurnLeft(rotationChange) {
-  if (rotationChange < 0) {
-    return rotationChange < -Math.PI ? false : true;
-  }
-  if (rotationChange > Math.PI) {
-    return true;
-  }
-  return false;
-}
-
-function turnTowards(actor, vTarget, specs, delta) {
-  const sprite = getAsset(actor.spriteId);
-  const targetDirection = getDirection(actor.data, vTarget);
-  const rotationChange = targetDirection - actor.data.rotation;
-  const absRotationChangeDeltaApplied = Math.abs(rotationChange) * delta * 0.1;
-  const turnBy = Math.min(
-    1,
-    Math.min(
-      absRotationChangeDeltaApplied,
-      absRotationChangeDeltaApplied * pathOr(1, ['thrust', 'turn'])(specs)
-    )
-  );
-  const turningLeft = shouldTurnLeft(rotationChange);
-  const adjTurnBy = turningLeft ? -turnBy : turnBy;
-
-  actor.data.rotation = normalizeDirection(actor.data.rotation + adjTurnBy);
-  sprite.rotation = actor.data.rotation;
-}
-
-function moveTowards(actor, vTarget, targetInfo, specs, delta) {
-  turnTowards(actor, vTarget, specs, delta);
-
-  applyThrusters({
-    actor,
-    delta,
-    thrustDirection: 'forward',
-    forward: 0.75 * pathOr(0.1, ['thrust', 'forward'])(specs),
-  });
 }
 
 function getTargetInfo(actor, targetData) {

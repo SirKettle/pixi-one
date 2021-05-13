@@ -12,7 +12,7 @@ import xWingImage from '../assets/images/xwing.png';
 
 export const spacecraft = {
   thrust: {
-    forward: 0.75,
+    forward: 1,
     reverse: 0.1,
     side: 0.05,
     turn: 0.5,
@@ -45,7 +45,7 @@ export const spacecraft = {
 
 export const craftGarbage1 = {
   thrust: {
-    forward: 0.35,
+    forward: 0.65,
     reverse: 0.1,
     side: 0.035,
     turn: 0.3,
@@ -71,7 +71,7 @@ export const craftGarbage1 = {
 
 export const craftH1 = {
   thrust: {
-    forward: 0.75,
+    forward: 1,
     reverse: 0.1,
     side: 0.07,
     turn: 0.7,
@@ -97,7 +97,7 @@ export const craftH1 = {
 
 export const craftNcfc = {
   thrust: {
-    forward: 0.75,
+    forward: 0.95,
     reverse: 0.1,
     side: 0.07,
     turn: 0.7,
@@ -122,7 +122,7 @@ export const craftNcfc = {
 
 export const tCraft = {
   thrust: {
-    forward: 0.65,
+    forward: 0.8,
     reverse: 0.1,
     side: 0.05,
     turn: 0.7,
@@ -147,7 +147,7 @@ export const tCraft = {
 
 export const xWing = {
   thrust: {
-    forward: 0.7,
+    forward: 0.8,
     reverse: 0.1,
     side: 0.05,
     turn: 0.65,

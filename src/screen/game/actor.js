@@ -7,6 +7,7 @@ import { getSpecs } from '../../specs/getSpecs';
 import {
   combineVelocity,
   defaultVector,
+  getDirection,
   getDistance,
   getVelocity,
   normalizeDirection,
@@ -180,7 +181,7 @@ export const updateActors = (actors, level, delta, deltaMs, game) => {
   });
 };
 
-export const applyThrusters = ({ actor, delta, forward = 0, side = 0 }) => {
+export function applyThrusters({ actor, delta, forward = 0, side = 0 }) {
   if (forward !== 0) {
     const specs = getSpecs(actor.assetKey);
     const thrust = pathOr(0.1, ['thrust', 'forward'])(specs) * 0.2;
@@ -205,4 +206,64 @@ export const applyThrusters = ({ actor, delta, forward = 0, side = 0 }) => {
       actor.data.velocity = combineVelocity(actor.data.velocity, thrustVelocity);
     }
   }
-};
+}
+
+export function shouldTurnLeft(rotationChange) {
+  if (rotationChange < 0) {
+    return rotationChange < -Math.PI ? false : true;
+  }
+  if (rotationChange > Math.PI) {
+    return true;
+  }
+  return false;
+}
+
+export function turnTowardsDirection(actor, targetDirection, specs, delta) {
+  const sprite = getAsset(actor.spriteId);
+  const rotationChange = targetDirection - actor.data.rotation;
+  const absRotationChangeDeltaApplied = Math.abs(rotationChange) * delta * 0.1;
+  const turnBy = Math.min(
+    1,
+    Math.min(
+      absRotationChangeDeltaApplied,
+      absRotationChangeDeltaApplied * pathOr(1, ['thrust', 'turn'])(specs)
+    )
+  );
+  const turningLeft = shouldTurnLeft(rotationChange);
+  const adjTurnBy = turningLeft ? -turnBy : turnBy;
+
+  actor.data.rotation = normalizeDirection(actor.data.rotation + adjTurnBy);
+  sprite.rotation = actor.data.rotation;
+}
+
+export function turnTowards(actor, vTarget, specs, delta) {
+  return turnTowardsDirection(actor, getDirection(actor.data, vTarget), specs, delta);
+}
+
+export function moveTowardsDirection(
+  actor,
+  targetDirection,
+  specs,
+  delta,
+  thrust = 0.75
+) {
+  turnTowardsDirection(actor, targetDirection, specs, delta);
+
+  applyThrusters({
+    actor,
+    delta,
+    thrustDirection: 'forward',
+    forward: thrust * pathOr(0.1, ['thrust', 'forward'])(specs),
+  });
+}
+
+export function moveTowardsTarget(actor, vTarget, targetInfo, specs, delta, thrust = 0.75) {
+  turnTowards(actor, vTarget, specs, delta);
+
+  applyThrusters({
+    actor,
+    delta,
+    thrustDirection: 'forward',
+    forward: thrust * pathOr(0.1, ['thrust', 'forward'])(specs),
+  });
+}

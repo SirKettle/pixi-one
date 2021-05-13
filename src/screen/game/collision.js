@@ -78,36 +78,13 @@ export function isCollision(actor1, actor2) {
   if (actor1.uid === actor2.uid) {
     return false;
   }
-  if (
-    actor1.data.noCollisionWith === actor2.uid ||
-    actor2.data.noCollisionWith === actor1.uid
-    // pathEq(['data', 'noCollisionWith'], actor2.uid)(actor1) ||
-    // pathEq(['data', 'noCollisionWith'], actor1.uid)(actor2)
-  ) {
+  if (actor1.data.noCollisionWith === actor2.uid || actor2.data.noCollisionWith === actor1.uid) {
     return false;
   }
   // todo: if all is true here - grinds to a halt!
-  // return false;
   const isBasicCollision = isSpriteCircleIntersect(actor1, actor2);
 
-  // const a1Specs = getSpecs(actor1.assetKey);
-  // const a2Specs = getSpecs(actor2.assetKey);
-  //
-  // const isBasicCollision = circleIntersect(
-  //   {
-  //     x: actor1.data.x,
-  //     y: actor1.data.y,
-  //     radius: 32,
-  //   },
-  //   {
-  //     x: actor2.data.x,
-  //     y: actor2.data.y,
-  //     radius: 32,
-  //   }
-  // );
-
   if (isBasicCollision) {
-    // return true;
     return !!getCollisionCircles(actor1, actor2);
   }
 

@@ -1,4 +1,4 @@
-import { BitmapText, Container, Graphics } from 'pixi.js';
+import { BitmapText, Circle, Container, Graphics } from 'pixi.js';
 import { drawCircle } from './graphics';
 import { BLACK, GREEN, RED } from '../constants/color';
 
@@ -12,9 +12,10 @@ export function textButton(text, args = {}) {
   });
 
   const border = new Graphics();
+  const radius = args.fixedRadius ? args.fixedRadius : sprite.width * 0.85;
   drawCircle({
     graphic: border,
-    radius: args.fixedRadius ? args.fixedRadius : sprite.width * 0.85,
+    radius,
     fillColor: GREEN,
     fillAlpha: 1,
     lineWidth: 0,
@@ -25,5 +26,10 @@ export function textButton(text, args = {}) {
   sprite.anchor.set(0.5);
   container.interactive = true;
   container.buttonMode = true;
+
+  if (args.hitAreaScale) {
+    container.hitArea = new Circle(0, 0, args.hitAreaScale * radius);
+  }
+
   return container;
 }

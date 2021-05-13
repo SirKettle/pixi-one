@@ -14,6 +14,7 @@ let bitmapText;
 export function showLevelIntro(game) {
   const app = getAsset(game.app);
   const container = getAsset(game.containers.info);
+  container.removeChildren();
   const level = getLevel(game.levelKey);
   // todo - get rid of this text - only create in the game screen
   // Each screen should have it's own text and remove children after each goto

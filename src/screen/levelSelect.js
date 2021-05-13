@@ -39,6 +39,7 @@ function getLevelButtonPosition(app, index, count) {
 export function showLevelSelect(game) {
   const app = getAsset(game.app);
   const container = getAsset(game.containers.info);
+  container.removeChildren();
 
   const availableLevels = getAvailableLevels(game);
   availableLevels.forEach((level, index) => {
