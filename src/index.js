@@ -293,6 +293,7 @@ export function initialise(gameEl) {
     app.ticker.add((delta) => mainLoop(_game, app.ticker, delta));
   });
 
+  // TODO: mobile
   // function onScreenResize() {
   //   app.resize();
   //   _game.prevScreen = null;
