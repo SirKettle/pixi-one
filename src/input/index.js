@@ -8,6 +8,19 @@ import { normalizeDirection } from '../utils/physics';
 
 export const FIRE_ONE = '_FIRE_ONE';
 
+const KEYS = {
+  // LEFT: 'k',
+  // RIGHT: ';',
+  // UP: 'o',
+  // DOWN: 'l',
+  // FIRE_1: 'Meta',
+  LEFT: 'ArrowLeft',
+  RIGHT: 'ArrowRight',
+  UP: 'ArrowUp',
+  DOWN: 'ArrowDown',
+  FIRE_1: ' ',
+}
+
 const BUTTON_STATE = {
   DOWN: 'DOWN',
   UP: 'UP',
@@ -63,6 +76,7 @@ function onDisconnect(event) {
 }
 
 function onKeydown({ key }) {
+  // console.log(key)
   const keys = { ...gamepadCache.keys };
   gamepadCache.keys = {
     ...keys,
@@ -178,7 +192,7 @@ function throttleAxisValue(val = 0, minVal = MIN_AXIS_VALUE) {
 }
 
 function getForwardThrust(axes, axisIndexMap) {
-  const kVal = isButtonDown('ArrowUp') ? -1 : isButtonDown('ArrowDown') ? 1 : 0;
+  const kVal = isButtonDown(KEYS.UP) ? -1 : isButtonDown(KEYS.DOWN) ? 1 : 0;
   // const virtualGamepad = getVirtualGamepadData();
   //
   // if (virtualGamepad && typeof virtualGamepad.y === 'number') {
@@ -194,7 +208,7 @@ function getForwardThrust(axes, axisIndexMap) {
 }
 
 function getTurnThrust(axes, axisIndexMap) {
-  const kVal = isButtonDown('ArrowLeft') ? -1 : isButtonDown('ArrowRight') ? 1 : 0;
+  const kVal = isButtonDown(KEYS.LEFT) ? -1 : isButtonDown(KEYS.RIGHT) ? 1 : 0;
   // const virtualGamepad = getVirtualGamepadData();
   //
   // if (virtualGamepad && typeof virtualGamepad.x === 'number') {
@@ -252,7 +266,7 @@ export function onUpdate(deltaMs) {
   const fireOnePressed =
     someButtonsPressed(buttons, getButtonIndicesFireOne(prevState.gamepadType)) ||
     virtualGamepadButtons.fireOneDown ||
-    isButtonDown(' ');
+    isButtonDown(KEYS.FIRE_1);
 
   const axisIndexMap = getAxisIndexMap(prevState.gamepadType);
   const forwardsThrustValue = getForwardThrust(axes, axisIndexMap);

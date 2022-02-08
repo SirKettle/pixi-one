@@ -4,6 +4,7 @@ import { drawCircle } from '../../utils/graphics';
 import { ORANGE } from '../../constants/color';
 import { getDistance } from '../../utils/physics';
 import { getAllActorsInTeams } from '../../utils/actor';
+import { queueSpeech } from '../../sound';
 
 export const OBJECTIVE_TYPE_GO_TO_WAYPOINT = 'OBJECTIVE_TYPE_GO_TO_WAYPOINT';
 export const OBJECTIVE_TYPE_GO_TO_TARGET = 'OBJECTIVE_TYPE_GO_TO_TARGET';
@@ -13,14 +14,20 @@ export const OBJECTIVE_TYPE_ELIMINATE_TARGET = 'OBJECTIVE_TYPE_ELIMINATE_TARGET'
 export function createObjective({
   type,
   uid = generateUid(),
-  title = 'Objective',
-  description = 'blah',
+  title = 'New objective',
+  description = '',
   onComplete = () => {},
   isComplete = false,
   isFail = false,
   isRead = false,
   ...details
 }) {
+  if (title) {
+    queueSpeech('You have a new objective. ' + title);
+    if (description) {
+      queueSpeech(description);
+    }
+  }
   return {
     uid,
     type,
@@ -93,7 +100,7 @@ export function updateObjectives(game, delta, deltaMs, sinVariant) {
       }
 
       case OBJECTIVE_TYPE_ELIMINATE_TARGET: {
-        const target = game.actors.find(propEq('uid', prop('target')(objective)));
+        const target = game.actorMap[prop('target')(objective)];
 
         if (!target) {
           objective.isComplete = true;
@@ -105,7 +112,8 @@ export function updateObjectives(game, delta, deltaMs, sinVariant) {
 
       case OBJECTIVE_TYPE_ELIMINATE_ALL_HOSTILES: {
         const hostileTeams = game.player.data.hostileTeams || [];
-        const hostileCount = getAllActorsInTeams(game, hostileTeams).length;
+        const hostileActors = getAllActorsInTeams(game, hostileTeams);
+        const hostileCount = Object.keys(hostileActors).length;
 
         if (hostileCount <= 0) {
           objective.isComplete = true;

@@ -15,8 +15,14 @@ import { normalizeDirection } from '../../utils/physics';
 import { generateBulletData } from '../../specs/bullets';
 import { getSpecs } from '../../specs/getSpecs';
 import { playSound } from '../../sound';
-import { applyThrusters, createActor, moveTowardsDirection, updateActorPosition } from './actor';
+import {
+  applyThrusters,
+  createActor,
+  moveTowardsDirection,
+  updateActorPosition
+} from './actor';
 import { updateDash } from './dash';
+import { assignToChunk } from './world';
 import { SCREEN_LEVEL_SELECT } from '../../utils/screen';
 
 export function updatePlayer({ game, level, delta, deltaMs, sinVariant }) {
@@ -80,7 +86,7 @@ export function updatePlayer({ game, level, delta, deltaMs, sinVariant }) {
 
     playSound(firePower > 0.8 ? 'bigLaser' : 'laser', firePower);
     // debugger;
-    game.bullets.push(newBullet);
+    game.bulletMap[newBullet.uid] = newBullet;
   }
 
   // draw player graphics here
@@ -91,5 +97,7 @@ export function updatePlayer({ game, level, delta, deltaMs, sinVariant }) {
     game.handlers.onQuit(game, SCREEN_LEVEL_SELECT);
     // setTimeout(() => {
     // }, 1000);
+  } else {
+    assignToChunk({game, uid: player.uid, x: player.data.x, y: player.data.y });
   }
 }

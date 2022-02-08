@@ -62,6 +62,10 @@ export function getDirection(
   return normalizeDirection(Math.atan2(vRel.y, vRel.x) + Math.PI * 0.5);
 }
 
+export function getVelocitySpeed(v = defaultVector) {
+  return Math.hypot(v.x, v.y);
+}
+
 export function normalizeDirection(dir) {
   const maxRadians = Math.PI * 2;
   let d = dir % maxRadians;

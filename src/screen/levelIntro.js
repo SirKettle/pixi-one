@@ -4,10 +4,11 @@ import { getLevel } from '../levels';
 import { goTo, SCREEN_PLAY } from '../utils/screen';
 import { textButton } from '../utils/button';
 import { pathOr } from 'ramda';
-import { playSingleSound, playTracks } from '../sound';
+import { playSingleSound, playTracks, queueSpeech } from '../sound';
 import { onResetText, onUpdateText } from '../utils/animateText';
 import { GREEN, ORANGE, YELLOW } from '../constants/color';
 import { stopSound } from '../utils/audio';
+import { speak } from '../sound/speech';
 
 let bitmapText;
 
@@ -55,11 +56,27 @@ export function showLevelIntro(game) {
 
   playTracks(level.soundtrack);
 
-  if (level.introSound) {
-    setTimeout(() => {
-      playSingleSound(level.introSound.id);
-    }, pathOr(0, ['introSound', 'startDelay'])(level));
-  }
+  // if (level.introSound) {
+  //   setTimeout(() => {
+  //     playSingleSound(level.introSound.id);
+  //   }, pathOr(0, ['introSound', 'startDelay'])(level));
+  // }
+
+  (level.intro || []).forEach(introMessage => {
+    queueSpeech(introMessage);
+  })
+
+  // const recursiveSpeak = (i = 0) => {
+  //   if (level.intro[i]) {
+  //     speak(level.intro[i], 4).then(() => {
+  //       recursiveSpeak(i+1);
+  //     }).catch((err) => {
+  //       console.log(err)
+  //     })
+  //   }
+  // }
+
+  // recursiveSpeak(0);
 }
 
 function goToGame(game) {
@@ -84,7 +101,7 @@ export function onUpdate(game, delta, deltaMs) {
     sentences: level.intro,
     bitmapText,
     deltaMs,
-    updateCharMs: 80,
+    updateCharMs: 50,
     onComplete: () => {
       setTimeout(() => goToGame(game), 5000);
     },

@@ -8,6 +8,7 @@ import {
   toggleAudio,
 } from '../utils/audio';
 import { queuePromise } from '../utils/promise';
+import { speak } from './speech';
 
 export function playTracks(ids) {
   return playCollection({ ids });
@@ -90,8 +91,43 @@ async function playMessage({ id, vol = 1, startSoundId, endSoundId }) {
   });
 }
 
+async function wrapMessage({ id, vol = 1, startMessage = 'You have one new message.', endMessage = 'End of message'}) {
+  return queuePromise({
+    queueId: 'message',
+    promise: () => {
+      const cacheMusicVol = propOr(1, 'musicVol')(getSettings());
+      return fadeMusic(0.2, 1000).then(() => {
+        return speak(startMessage).then(() => {
+        // return playSingleSound(startSoundId, vol).then(() => {
+          return playSingleSound(id, vol).then(() => {
+            return speak(endMessage).then(() => {
+            // return playSingleSound(endSoundId, vol).then(() => {
+              return fadeMusic(cacheMusicVol, 2000);
+            });
+          });
+        });
+      });
+    },
+  });
+}
+
+export async function queueSpeech(message = 'You have one new message.', voiceIndex) {
+  return queuePromise({
+    queueId: 'message',
+    promise: () => {
+      const cacheMusicVol = propOr(1, 'musicVol')(getSettings());
+      return fadeMusic(0.2, 1000).then(() => {
+        return speak(message).then(() => {
+          return fadeMusic(cacheMusicVol, 2000);
+        });
+      });
+    },
+  });
+}
+
 export async function playPhoneMessage(id, vol = 1) {
-  return playMessage({ id, vol, startSoundId: 'new_message', endSoundId: 'end_of_message' });
+  // return playMessage({ id, vol, startSoundId: 'new_message', endSoundId: 'end_of_message' });
+  return wrapMessage({ id, vol });
 }
 
 export async function playRadioMessage(id, vol = 1) {

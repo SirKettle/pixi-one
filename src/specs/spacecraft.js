@@ -112,7 +112,7 @@ export const craftNcfc = {
   },
   initialData: {
     shield: 1,
-    life: 200,
+    life: 1000,
     mass: 150,
     fuelCapacity: 100,
   },

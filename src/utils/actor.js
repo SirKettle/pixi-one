@@ -1,16 +1,14 @@
-import { path, pathOr, propEq } from 'ramda';
+import { path, pathOr, propEq, filter } from 'ramda';
 import { getAsset } from './assetStore';
 import { getSpecs } from '../specs/getSpecs';
 import { getDistance, getVelocity, relativeVelocity } from './physics';
 import { drawCircle } from './graphics';
 
-export const getActorByUid = ({ player, actors, bullets }) => (uid) => {
+export const getActorByUid = ({ player, actorMap, bulletMap }) => (uid) => {
   if (player.uid === uid) {
     return player;
   }
-  const actor = actors.find(propEq('uid', uid));
-
-  return actor || bullets.find(propEq('uid', uid));
+  return actorMap[uid] || bulletMap[uid];
 };
 
 export const getActorRadius = ({ assetKey, spriteId }) => {
@@ -21,12 +19,23 @@ export const getActorRadius = ({ assetKey, spriteId }) => {
 export const getSpriteRadius = (sprite, percentage = 0.5) =>
   Math.max(sprite.width, sprite.height) * percentage;
 
-export const getAllActors = (game) => game.actors.concat(game.bullets, [game.player]);
+export const getArrayAsMap = (arr = [], key = 'uid') => {
+  return arr.reduce((acc, item) => ({
+    ...acc,
+    [item[key]]: item
+  }), {});
+}
 
-export const getAllActorsInTeams = (game, teams = []) => {
-  const allActors = getAllActors(game);
-  return allActors.filter((a) => teams.includes(path(['data', 'team'])(a)));
+export const getAllActorsMap = (game) => {
+  return {
+    ...game.bulletMap,
+    ...game.actorMap
+  };
 };
+
+export const isActorInTeams = (teams = []) => (actor) => teams.includes(actor?.data?.team);
+
+export const getAllActorsInTeams = (game, teams = []) => filter(isActorInTeams(teams))(game.actorMap);
 
 export const sortByNearest = (actor) => (targetA, targetB) => {
   const dA = getDistance(actor.data, targetA.data);

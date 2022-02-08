@@ -35,6 +35,8 @@
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
+    "@pixi/filter-pixelate": "^3.1.1",
+    "@pixi/filter-zoom-blur": "^3.2.1",
     "nipplejs": "^0.8.5",
     "pixi.js": "^5.2.2",
     "ramda": "^0.27.0",

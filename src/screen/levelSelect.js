@@ -68,8 +68,8 @@ function loadLevel(game, { levelKey }) {
 
   game.player = mission.player;
   game.passiveActors = mission.passiveActors || [];
-  game.actors = mission.actors || [];
-  game.bullets = [];
+  game.actorMap = mission.actorMap;
+  game.bulletMap = {};
   game.particles = [];
   game.tiles = level.tiles;
   game.levelKey = level.key;

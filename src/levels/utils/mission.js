@@ -1,4 +1,5 @@
 import { omit, pathOr, propOr, times, unnest } from 'ramda';
+import { v4 as generateUid } from 'uuid';
 import { getRandomInt } from '../../utils/random';
 
 export const ORDER = {
@@ -6,10 +7,10 @@ export const ORDER = {
   ATTACK: 'ATTACK',
 };
 
-export const getRandomPoints = (num = 2) =>
+export const getRandomPoints = (num = 3) =>
   times(() => ({
-    x: getRandomInt(-1000, 1000),
-    y: getRandomInt(-1000, 1000),
+    x: getRandomInt(-2500, 2500),
+    y: getRandomInt(-2500, 2500),
   }))(num);
 
 export const getOrder = ({ type = ORDER.PATROL, points = getRandomPoints() }) => {
@@ -40,39 +41,47 @@ export function generateMission({
   passive = [],
   randomPassive = [],
 }) {
+
+  const missionActors = [
+    ...actors,
+    ...unnest(
+      randomActors.map((data) =>
+        times(() => ({
+          ai: true,
+          x: getRandomInt(-2500, 2500),
+          y: getRandomInt(-2500, 2500),
+          ...data,
+        }))(data.count || 1)
+      )
+    ),
+    ...unnest(
+      actorGroups.map((data) =>
+        times(() => ({
+          ai: true,
+          x: getRandomInt(-2500, 2500),
+          y: getRandomInt(-2500, 2500),
+          ...omit(['count'])(data),
+          order: {
+            ...propOr({}, 'order')(data),
+            points: pathOr([], ['order', 'points'])(data).map(adjustPoint),
+          },
+        }))(data.count || 1).map(adjustPoint)
+      )
+    ),
+  ];
+
+  const actorMap = missionActors.reduce((acc, a) => ({
+    ...acc,
+    [a.uid || generateUid()]: a
+  }), {});
+
   return {
     key,
     allowedTimeMs,
     description,
     objectives,
     player,
-    actors: [
-      ...actors,
-      ...unnest(
-        randomActors.map((data) =>
-          times(() => ({
-            ai: true,
-            x: getRandomInt(-2000, 2000),
-            y: getRandomInt(-2000, 2000),
-            ...data,
-          }))(data.count || 1)
-        )
-      ),
-      ...unnest(
-        actorGroups.map((data) =>
-          times(() => ({
-            ai: true,
-            x: getRandomInt(-2000, 2000),
-            y: getRandomInt(-2000, 2000),
-            ...omit(['count'])(data),
-            order: {
-              ...propOr({}, 'order')(data),
-              points: pathOr([], ['order', 'points'])(data).map(adjustPoint),
-            },
-          }))(data.count || 1).map(adjustPoint)
-        )
-      ),
-    ],
+    actorMap,
     passiveActors: [
       ...passive,
       ...unnest(

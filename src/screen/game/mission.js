@@ -1,5 +1,6 @@
 import { propEq, propOr } from 'ramda';
 import { getAsset } from '../../utils/assetStore';
+import { getCounters, getLog, getMeters } from '../../utils/dash';
 import { getAllActorsInTeams } from '../../utils/actor';
 import { getMission } from '../../levels';
 import { actionEvent } from '../../levels/utils/events';
@@ -45,9 +46,12 @@ export const updateMission = (game, delta, deltaMs) => {
     // onSaveGame(state);
 
     const hostileTeams = player.data.hostileTeams || [];
-    const hostileCount = getAllActorsInTeams(game, hostileTeams).length;
+    const hostileActors = getAllActorsInTeams(game, hostileTeams);
+    const hostileCount = Object.keys(hostileActors).length;
+    const friendlies = getAllActorsInTeams(game, mission.player.team);
+    const friendliesCount = Object.keys(friendlies).length;
     const missionComplete = hostileCount === 0;
-    const missionInfo = [];
+    const missionInfo = [`\n\n`];
 
     missionInfo.push(`${missionComplete ? 'Complete' : 'Mission'}: ${mission.description}`);
 
@@ -67,7 +71,7 @@ export const updateMission = (game, delta, deltaMs) => {
 
     if (hostileTeams.length) {
       missionInfo.push(`\nHostiles: ${hostileCount}`);
-      missionInfo.push(`Friends: ${getAllActorsInTeams(game, mission.player.team).length}`);
+      missionInfo.push(`Friends: ${friendliesCount}`);
     }
 
 
@@ -75,12 +79,20 @@ export const updateMission = (game, delta, deltaMs) => {
 
     missionInfo.push(`\nCoords: ${Math.floor(player.data.x)}, ${Math.floor(player.data.y)}`);
     missionInfo.push(`Area key: ${cachedAreaKey}`);
-    missionInfo.push(`Areas discovered: ${discoveredAreaKeys.length}`);
+    // missionInfo.push(`Areas discovered: ${discoveredAreaKeys.length}`);
+
+    
 
     const debugText = settings.isDebugDisplayMode
       ? `DEBUG (Press 'd' to toggle)
-FPS: ${Math.floor(app.ticker.FPS)}
-Session time: ${elapsedS}`
+Session time: ${elapsedS}
+
+${Object.keys(getMeters()).map(k => `${k}: ${getMeters(k)}`).join('\n')}
+
+${Object.keys(getCounters()).map(k => `${k}: ${getCounters(k)}`).join('\n')}
+
+${Object.keys(getLog()).map(k => `${k}: ${getLog(k)}`).join('\n')}
+`
       : '';
 
     const dashboardDisplayText = getAsset(dashboardDisplayTextId);

@@ -1,5 +1,5 @@
 import { path, pathOr } from 'ramda';
-import { getAllActorsInTeams, sortByNearest } from '../../utils/actor';
+import { getActorByUid, isActorInTeams, sortByNearest } from '../../utils/actor';
 import { getDirection, getDistance, normalizeDirection } from '../../utils/physics';
 import { getAsset } from '../../utils/assetStore';
 import { generateBulletData } from '../../specs/bullets';
@@ -24,7 +24,7 @@ const fire = (game, host) => () => {
     playSound('laser', vol);
   }
 
-  game.bullets.push(newBullet);
+  game.bulletMap[newBullet.uid] = newBullet;
 };
 
 export function updateActorAi(game, actor, delta, deltaMs) {
@@ -33,10 +33,24 @@ export function updateActorAi(game, actor, delta, deltaMs) {
   }
   const specs = getSpecs(actor.assetKey);
 
-  const potentialTargets = getAllActorsInTeams(game, path(['data', 'hostileTeams'])(actor));
+  // const potentialTargets = []; //getAllActorsInTeams(game, path(['data', 'hostileTeams'])(actor));
+
+  const chunkArea = game.expandedChunkAreas[actor.chunkKey];
+  const chunkUids = chunkArea?.uids || [];
+  // TODO - debug this
+  const chunkActors = chunkUids.map(getActorByUid(game));
+  const potentialTargets = chunkActors.filter(isActorInTeams(actor.data?.hostileTeams));
 
   const sortedPotentialTargets = potentialTargets.sort(sortByNearest(actor));
   const nearestTarget = sortedPotentialTargets[0];
+
+  // if (actor.crashDetectionHitArea) {
+  // sortedPotentialTargets.slice(0, 5).some(a => {
+
+  //     // check for collision with nearest actors
+  //     return false;
+  //   })
+  // }
 
   const orderType = path(['data', 'currentOrder', 'type'])(actor);
 
@@ -70,7 +84,7 @@ function updateAttack({ game, actor, specs, delta, deltaMs, nearestTarget }) {
   if (nearestTarget) {
     const targetInfo = getTargetInfo(actor, nearestTarget.data);
 
-    if (targetInfo.inRadarRange) {
+    if (targetInfo.inContinuePursuitRange) {
       if (targetInfo.inCloseRange) {
         doEveryMs(fire(game, actor), deltaMs, 1000);
         turnTowards(actor, nearestTarget.data, specs, delta);
@@ -120,6 +134,7 @@ function getTargetInfo(actor, targetData) {
   const distance = targetData ? getDistance(actor.data, targetData) : undefined;
 
   return {
+    inContinuePursuitRange: distance ? distance < 800 : false,
     inRadarRange: distance ? distance < 500 : false,
     inCloseRange: distance ? distance < 300 : false,
     distance,

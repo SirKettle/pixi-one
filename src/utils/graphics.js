@@ -22,7 +22,7 @@ export function drawCircle({
   }
 
   if (clear) {
-    circleGraphic.clear();
+    // circleGraphic.clear();
   }
 
   circleGraphic.lineStyle(lineWidth, lineColor, lineAlpha);

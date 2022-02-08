@@ -45,7 +45,6 @@ export default {
   }),
   events: [
     phoneMessageEvent('message_nana_crisps', 6500),
-    radioMessageEvent('message_boss_backtowork', 25000),
     newObjectiveEvent(
       () =>
         createWaypointObjective({
@@ -54,22 +53,23 @@ export default {
           waypoint: { position: { x: 7000, y: 3500 }, radius: 300 },
           onComplete: (game) => {
             playRadioMessage('message_boss_finally');
-            playPhoneMessage('message_nana_bad_news');
             addObjective(
               game,
               createWaypointObjective({
-                title: 'Now back to HQ',
-                description: 'Now time to return to base',
+                title: 'Report back to HQ',
+                description: 'Follow the navigation system to the open star gate',
                 waypoint: { position: { x: -3500, y: -500 }, radius: 150 },
                 onComplete: (game) => {
                   setTimeout(() => onCompleteLevel(game), 2000);
                 },
               })
             );
+            playPhoneMessage('message_nana_bad_news');
           },
         }),
       22000
     ),
+    radioMessageEvent('message_boss_backtowork', 25000),
   ],
   unlocksLevels: ['level002'],
   soundtrack: ['music-aha', 'music-wiffy'],

@@ -49,12 +49,12 @@ export const starsParallax = [
   //     scale: 2,
   //   },
   // },
-  // {
-  //   data: {
-  //     assetKey: 'grid128',
-  //     parallax: 1,
-  //     alpha: 0.6,
-  //     scale: 3,
-  //   },
-  // },
+  {
+    data: {
+      assetKey: 'grid128',
+      parallax: 1,
+      alpha: 0.1,
+      scale: 2,
+    },
+  },
 ];

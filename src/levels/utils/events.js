@@ -37,6 +37,15 @@ export function newObjectiveEvent(objective, startTimeMs) {
   };
 }
 
+// export function speechEvent(message, startTimeMs) {
+//   return {
+//     uid: generateUid(),
+//     type: EVENT_TYPE_NEW_OBJECTIVE,
+//     startTimeMs,
+//     message,
+//   };
+// }
+
 export function actionEvent(game, event) {
   switch (event.type) {
     case EVENT_TYPE_PHONE_MESSAGE:

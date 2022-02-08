@@ -1,10 +1,13 @@
 import { Application, BitmapText, Container, filters, Graphics } from 'pixi.js';
+import { PixelateFilter } from '@pixi/filter-pixelate';
+import { ZoomBlurFilter } from '@pixi/filter-zoom-blur';
 import { isButtonUp, onUpdate as onUpdateInputs, subscribe as inputsSubscribe } from './input';
 import {
   addGamepad as addVirtualGamepad,
   removeGamepad as removeVirtualGamepad,
 } from './input/virtualGamepad';
 import fontDashDisplay from './assets/font/digital7_mono_white.xml';
+import { CHUNK_SIZE } from './constants/chunk';
 import { logGameCredits } from './utils/log';
 import { destroyAllAssets, getAsset, setAsset } from './utils/assetStore';
 import {
@@ -20,9 +23,11 @@ import { showNewGame } from './screen/newGame';
 import { showLevelSelect } from './screen/levelSelect';
 import { onUpdate as onUpdateLevelIntro, showLevelIntro } from './screen/levelIntro';
 import { showPlay, onUpdate as onUpdatePlay } from './screen/game';
-import { GREEN, ORANGE, YELLOW } from './constants/color';
+import { BLUE, GREEN, ORANGE, YELLOW } from './constants/color';
 import { adjustMusicVolume, toggleMusic, toggleSound } from './sound';
 import { getDimensions, getIsMobile, isTouchDevice } from './utils/device';
+import { initSpeech, speak } from './sound/speech';
+import { reduce } from 'ramda';
 
 const gameEl = document.getElementById('game');
 
@@ -123,7 +128,7 @@ function initStage(game) {
   game.containers.worldFar = setAsset(worldFar);
   game.containers.world = setAsset(world);
   game.containers.worldNear = setAsset(worldNear);
-  game.containers.foreground = setAsset(background);
+  game.containers.foreground = setAsset(foreground);
   game.containers.dash = setAsset(dash);
   game.containers.info = setAsset(info);
   app.stage.addChild(background);
@@ -133,17 +138,31 @@ function initStage(game) {
   app.stage.addChild(foreground);
   app.stage.addChild(dash);
   app.stage.addChild(info);
-
+  
   const blurFilter = new filters.BlurFilter();
+  const pixelateFilter = new PixelateFilter(3);
+  const zoomBlurFilter = new ZoomBlurFilter({
+    // strength: 1,
+    center: [ app.screen.width / 2, app.screen.height / 2,],
+    innerRadius: 500,
+    // radius: app.screen.width,
+    // maxKernelSize?:number;
+  });
+
+  const gameFilters = [
+    blurFilter, 
+    // pixelateFilter,
+    zoomBlurFilter
+  ];
   game.filterIds.blur = setAsset(blurFilter);
-  world.filters = [blurFilter];
-  background.filters = [blurFilter];
+  world.filters = gameFilters;
+  background.filters = gameFilters;
   blurFilter.blur = 0;
 
   const dashboardDisplayText = new BitmapText('', {
     font: '20px Digital-7 Mono',
     align: 'left',
-    tint: GREEN,
+    tint: BLUE,
   });
 
   dashboardDisplayText.x = 25;
@@ -222,9 +241,9 @@ export function initialise(gameEl) {
   //   height: 350,
   // };
 
-  if (!isLandscape && isTouchDevice()) {
-    window.alert('Please rotate your screen to landscape');
-  }
+  // if (!isLandscape && isTouchDevice()) {
+  //   window.alert('Please rotate your screen to landscape');
+  // }
 
   // master game object
   const _game = {
@@ -233,8 +252,8 @@ export function initialise(gameEl) {
     filterIds: {},
     containers: {},
     passiveActors: [],
-    actors: [],
-    bullets: [],
+    actorMap: {},
+    bulletMap: {},
     time: {
       paused: false,
       session: {
@@ -257,24 +276,40 @@ export function initialise(gameEl) {
     tickCount: 0,
   };
 
-  const wrapperEl = document.getElementById('gameWrapper');
-  wrapperEl.style.width = `${dimensions.width}px`;
-  wrapperEl.style.height = `${dimensions.height}px`;
+  // .game-wrapper {
+  //   max-width: 200vh;
+  // }
+
+  // .aspect-ratio {
+  //   padding-top: 50%;
+  // }
+
+  // aspectRatio
+  const chunksX = 6;
+  const chunksY = 3;
+  // const aspectRatio = [6,4];
+
+  const gameWrapperEl = document.getElementById('gameWrapper');
+  gameWrapperEl.style.maxWidth = `${Math.round(chunksX / chunksY * 100)}vh`;
+  const aspectRatioEl = document.getElementById('aspectRatio');
+  aspectRatioEl.style.paddingTop = `${Math.round(chunksY / chunksX * 100)}%`;
+  // wrapperEl.style.height = `${dimensions.height}px`;
 
   const app = new Application({
     view: gameEl,
     // width: window.innerWidth / window.devicePixelRatio,
     // height: window.innerHeight / window.devicePixelRatio,
     // resolution: window.devicePixelRatio,
+    backgroundColor: '0x000000',
     resolution: window.devicePixelRatio,
     autoDensity: true,
-    width: dimensions.width * (isMobile ? 2 : 1),
-    height: dimensions.height * (isMobile ? 2 : 1),
+    width: CHUNK_SIZE * chunksX, // * (isMobile ? 2 : 1),
+    height: CHUNK_SIZE * chunksY, // * (isMobile ? 2 : 1),
   });
 
-  if (isMobile) {
-    gameEl.style.transform = 'scale(0.5)';
-  }
+  // if (isMobile) {
+  //   gameEl.style.transform = 'scale(0.5)';
+  // }
 
   _game.app = setAsset(app);
 
@@ -317,3 +352,18 @@ export function initialise(gameEl) {
 
 logGameCredits();
 initialise(gameEl);
+
+const recursiveSpeak = (i = 0) => {
+  // if (i < 10) {
+    speak('Yo yo yo - what’s up bitches?', i).then(() => {
+      recursiveSpeak(i+1);
+    }).catch((err) => {
+      console.log(err)
+    })
+  // }
+}
+
+initSpeech().then(() => {
+
+  // recursiveSpeak();
+});

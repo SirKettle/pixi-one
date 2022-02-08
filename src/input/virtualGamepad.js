@@ -80,19 +80,20 @@ export function addGamepad(game) {
 
   const app = getAsset(game.app);
   const container = getAsset(game.containers.dash);
-  const x = app.screen.width - 120;
-  const y = app.screen.height - 120;
-  const fireButton = textButton(`F1`, { fixedRadius: 40, hitAreaScale: 3 });
+  const x = app.screen.width - 200;
+  const y = app.screen.height - 200;
+  const fireButton = textButton(`F1`, { fixedRadius: 80, hitAreaScale: 3 });
   fireButton.position.set(x, y);
+  fireButton.alpha = 0.5;
   fireButton.on('pointerdown', () => {
     console.log('fireButton down');
     _cache.buttonData.fireOneDown = true;
-    fireButton.alpha = 0.5;
+    fireButton.alpha = 0.3;
   });
   fireButton.on('pointerup', () => {
     console.log('fireButton up - FIRE!');
     _cache.buttonData.fireOneDown = false;
-    fireButton.alpha = 1;
+    fireButton.alpha = 0.5;
   });
 
   container.addChild(fireButton);

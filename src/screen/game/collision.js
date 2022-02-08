@@ -10,11 +10,12 @@ import {
 } from '../../utils/physics';
 import {
   getActorByUid,
-  getAllActors,
+  getAllActorsMap,
   getPrecisionHitCircles,
   getShouldUpdate,
   getUpdateFrequency,
 } from '../../utils/actor';
+import { count, dashLog } from '../../utils/dash';
 import { playSound } from '../../sound';
 import { getAsset } from '../../utils/assetStore';
 import { addExplosion } from '../../utils/particle';
@@ -75,7 +76,9 @@ export function getCollisionCircles(actor1, actor2) {
 }
 
 export function isCollision(actor1, actor2) {
+  
   if (actor1.uid === actor2.uid) {
+    // count('dogdy check');
     return false;
   }
   if (actor1.data.noCollisionWith === actor2.uid || actor2.data.noCollisionWith === actor1.uid) {
@@ -97,34 +100,107 @@ export function getActorDamage({ data }, speed) {
   return Math.max(0, adj);
 }
 
-function getUniqCollisionPairs(game, actors) {
+
+// function getChunkArePairs(game) {
+//   return function(chunkArea) {
+//     const pairs = [];
+
+//     function checkIsCollision(aUid){
+//       return function (bUid){
+//         const actorA = game.actorMap[aUid] || game.bulletMap[aUid] || (game.player.uid === aUid ? game.player : undefined);
+//         const actorB = game.actorMap[bUid] || game.bulletMap[bUid] || (game.player.uid === bUid ? game.player : undefined);
+//         if (isCollision(actorA, actorB)) {
+//           const pair = [aUid, bUid].sort();
+//           pairs.push(pair);
+//         }
+//       }
+//     }
+
+//     function checkCollisionForUid(aUid, i) {
+//       // const updateFrequency = getUpdateFrequency(actorA.data.distanceFromCenter, 'collision');
+//       // const shouldCheckCollisions = getShouldUpdate(game, i, updateFrequency);
+
+//       // if (shouldCheckCollisions) {
+//       chunkArea.uids.slice(i + 1).forEach(checkIsCollision(aUid));
+
+//     }
+
+//     chunkArea.uids.forEach(checkCollisionForUid);
+
+//     return pairs;
+//   }
+// }
+
+// function getUniqCollisionPairs(game) {
+//   console.time('getUniqCollisionPairs')
+//   const pairs = Object.values(game.expandedChunkAreas)
+//   .flatMap(getChunkArePairs(game));
+//   console.timeEnd('getUniqCollisionPairs')
+//   return uniq(pairs);
+// }
+
+
+
+export function getUniqCollisionPairsB(game) {
+  // console.time('B - getUniqCollisionPairs')
   const pairs = [];
-  let i, j;
-  const actorsCount = actors.length;
-  for (i = 0; i < actorsCount; i++) {
-    const actorA = actors[i];
+  const chunkAreas = Object.values(game.expandedChunkAreas);
+  for (let ci = 0; ci < chunkAreas.length; ++ci) {
+    const chunkUids = chunkAreas[ci].uids;
+    for (let i = 0; i < chunkUids.length; ++i) {
+      const aUid = chunkUids[i];
+      const actorA = game.actorMap[aUid] || game.bulletMap[aUid] || (game.player.uid === aUid ? game.player : undefined);
+      if (actorA) {
+        for (let j = i + 1; j < chunkUids.length; ++j) {
+          const bUid = chunkUids[j];
+          const actorB = game.actorMap[bUid] || game.bulletMap[bUid] || (game.player.uid === bUid ? game.player : undefined);
+          count('Collision check');
+          if (actorB && isCollision(actorA, actorB)) {
+            const pair = [aUid, bUid].sort();
+            pairs.push(pair);
+          }
+        }
+      }
+    }
+  }
+  // console.timeEnd('B - getUniqCollisionPairs')
+  return uniq(pairs);
+}
 
-    const updateFrequency = getUpdateFrequency(actorA.data.distanceFromCenter, 'collision');
-    const shouldCheckCollisions = getShouldUpdate(game, i, updateFrequency);
-
-    if (shouldCheckCollisions) {
-      for (j = 0; j < actorsCount; j++) {
-        const actorB = actors[j];
-        if (isCollision(actorA, actorB)) {
-          const pair = [actorA.uid, actorB.uid].sort();
+export function getUniqCollisionPairsC(game) {
+  // console.time('C - getUniqCollisionPairs')
+  const pairs = [];
+  const actorKeys = Object.keys(game.actorMap).concat(Object.keys(game.bulletMap), game.player.uid);
+  
+  for (let i = 0; i < actorKeys.length; ++i) {
+    const aUid = actorKeys[i];
+    const actorA = game.actorMap[aUid] || game.bulletMap[aUid] || (game.player.uid === aUid ? game.player : undefined);
+    if (actorA) {
+      for (let j = i + 1; j < actorKeys.length; ++j) {
+        const bUid = actorKeys[j];
+        const actorB = game.actorMap[bUid] || game.bulletMap[bUid] || (game.player.uid === bUid ? game.player : undefined);
+        count('Collision check');
+        if (actorB && isCollision(actorA, actorB)) {
+          const pair = [aUid, bUid].sort();
           pairs.push(pair);
         }
       }
     }
   }
-
+  // console.timeEnd('C - getUniqCollisionPairs')
   return uniq(pairs);
 }
 
-export function handleCollisions(game) {
-  const allActors = getAllActors(game);
+export function handleCollisions(game, collisionMode = 'simple') {
 
-  const uniqCollisionPairs = getUniqCollisionPairs(game, allActors);
+  const chunkAreaCount = Object.keys(game.expandedChunkAreas).length;
+  // console.log('chunk areas', chunkAreaCount);
+  dashLog('Collision mode', collisionMode);
+  // const actorKeys = Object.keys(game.actorMap).concat(Object.keys(game.bulletMap), game.player.uid);
+  // const uniqCollisionPairs = chunkAreaCount > 55 && actorKeys.length > 150
+  const uniqCollisionPairs = collisionMode === 'spacial'
+  ? getUniqCollisionPairsB(game)
+  : getUniqCollisionPairsC(game);
 
   if (uniqCollisionPairs.length) {
     uniqCollisionPairs.forEach(([aUid, bUid]) => {

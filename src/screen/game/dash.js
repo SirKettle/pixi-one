@@ -5,8 +5,10 @@ import {
   getSpriteRadius,
   sortByNearest,
 } from '../../utils/actor';
-import { GREEN, ORANGE, RED, WHITE, YELLOW } from '../../constants/color';
+import { GREEN, ORANGE, RED, WHITE, BLUE, YELLOW } from '../../constants/color';
 import { drawCircle, drawDirection, drawNavigationArrow } from '../../utils/graphics';
+import { getDirection } from '../../utils/physics';
+import { dashLog } from '../../utils/dash';
 import {
   OBJECTIVE_TYPE_ELIMINATE_TARGET,
   OBJECTIVE_TYPE_GO_TO_WAYPOINT,
@@ -15,6 +17,20 @@ import { getAsset } from '../../utils/assetStore';
 import { onResetText, onUpdateText } from '../../utils/animateText';
 
 const cache = {};
+
+const getDirectionDiff = (a, b) => {
+  const maxRadians = Math.PI * 2;
+  const diff = Math.abs(a - b);
+  if (diff > Math.PI) {
+    return maxRadians - diff;
+  }
+  return diff;
+}
+
+const isDirectionMatch = (tolerance = 0.05) => (a, b) => {
+  if (typeof a !== 'number' || typeof b !== 'number') { return false; }
+  return getDirectionDiff(a, b) < tolerance;
+}
 
 export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, firePower }) {
   const player = game.player;
@@ -27,6 +43,14 @@ export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, f
   const healthPercentage = player.data.life / player.performance.startLife;
   const healthColor = healthPercentage > 0.75 ? GREEN : healthPercentage > 0.25 ? YELLOW : RED;
   const healthLineWidth = 12;
+
+
+
+  const potentialTargets = getAllActorsInTeams(game, path(['data', 'hostileTeams'])(player));
+  const sortedPotentialTargets = Object.values(potentialTargets).sort(sortByNearest(player));
+  const nearestTarget = sortedPotentialTargets[0];
+
+
 
   // health bar
   drawCircle({
@@ -54,11 +78,19 @@ export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, f
 
   const targetRadius = minRadius + 100;
 
+  const nearestTargetDirection = nearestTarget ? getDirection(player.data, nearestTarget.data) : null;
+  const isNearestTargetInSights = isDirectionMatch(0.3)(player.data.rotation, nearestTargetDirection);
+  const isNearestTargetInSightsPrecision = isNearestTargetInSights && isDirectionMatch(0.075)(player.data.rotation, nearestTargetDirection);
+
+  // dashLog('player rotation..', player.data.rotation);
+  // dashLog('nearest target...', nearestTargetDirection || '?');
+
+
   drawCircle({
     graphic,
     lineWidth: 3,
-    lineColor: WHITE,
-    lineAlpha: 0.05,
+    lineColor: isNearestTargetInSights ? RED : BLUE,
+    lineAlpha: isNearestTargetInSights ? (isNearestTargetInSightsPrecision ? 0.25 : 0.15) : 0.05,
     x: path(['data', 'x'])(player),
     y: path(['data', 'y'])(player),
     radius: targetRadius, // - sinVariant,
@@ -82,8 +114,9 @@ export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, f
       direction: direction,
       startRadius: targetRadius - 10,
       length: 20,
-      lineAlpha: 0.1,
+      lineAlpha: isNearestTargetInSightsPrecision ? 0.5 : 0.1,
       lineWidth: 3,
+      lineColor: isNearestTargetInSightsPrecision ? RED : WHITE
     });
   });
 
@@ -92,14 +125,12 @@ export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, f
     fromPoint: player.data,
     direction: player.data.rotation,
     startRadius: targetRadius - 15,
+    lineColor: GREEN,
     length: 30,
-    lineAlpha: 0.1,
+    lineAlpha: 0.2,
     lineWidth: 3,
   });
 
-  const potentialTargets = getAllActorsInTeams(game, path(['data', 'hostileTeams'])(player));
-  const sortedPotentialTargets = potentialTargets.sort(sortByNearest(player));
-  const nearestTarget = sortedPotentialTargets[0];
   if (nearestTarget) {
     drawNavigationArrow({
       graphic,
@@ -165,7 +196,7 @@ export function updateDash({ game, deltaMs, sinVariant, fireButtonPressedTime, f
       }
 
       case OBJECTIVE_TYPE_ELIMINATE_TARGET: {
-        const target = game.actors.find(propEq('uid', prop('target')(objective)));
+        const target = game.actorMap[prop('target')(objective)];
 
         if (!target) {
           break;

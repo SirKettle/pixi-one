@@ -13,6 +13,7 @@ import {
   normalizeDirection,
 } from '../../utils/physics';
 import { updateActorAi } from './ai';
+import { assignToChunk } from './world';
 import {
   drawHitCircles,
   getActorRadius,
@@ -20,6 +21,7 @@ import {
   getUpdateFrequency,
 } from '../../utils/actor';
 import { addExplosion } from '../../utils/particle';
+import { drawCircle } from '../../utils/graphics';
 
 export const createTile = (app, container) => (tile) => {
   const { screen } = app;
@@ -57,6 +59,7 @@ export const initActor = ({ assetKey, overrides = {}, uid }) => {
   sprite.anchor.set(0.5);
   sprite.position.set(data.x, data.y); // maybe don't even need this?
 
+  // debugger;
   return {
     uid: uid || data.uid || generateUid(),
     assetKey,
@@ -75,19 +78,23 @@ export const createActor = (container) => (data) => {
   });
   container.addChild(getAsset(actor.spriteId));
 
+
   const specs = getSpecs(assetKey);
   actor.performance = {
     radiusPx: getActorRadius(actor),
     precisionHitAreas: pathOr([], ['hitArea', 'precision'])(specs),
     startLife: actor.data.life,
   };
+
+  // debugger;
   return actor;
 };
 
 const MAX_ATMOSPHERE_DRAG = 0.1;
 
 export const atmosphereDragFactor = ({ delta, level, isBullet = false, factor = 1 }) => {
-  const drag = MAX_ATMOSPHERE_DRAG * delta * propOr(0, 'atmosphere')(level);
+  // const drag = MAX_ATMOSPHERE_DRAG * delta * propOr(0, 'atmosphere')(level);
+  const drag = MAX_ATMOSPHERE_DRAG * propOr(0, 'atmosphere')(level);
   const adjDrag = isBullet ? 0.3 : factor;
   return 1 - drag * adjDrag;
 };
@@ -113,8 +120,8 @@ export const updateActorPosition = ({ data, spriteId }, level, delta) => {
 
   data.velocity = applyAtmosphereToVelocity({ data, delta, level });
 
-  data.x += data.velocity.x;
-  data.y += data.velocity.y;
+  data.x += data.velocity.x * delta;
+  data.y += data.velocity.y * delta;
   sprite.position.set(data.x, data.y);
 
   if (data.rotationSpeed) {
@@ -127,8 +134,8 @@ export const updateActorPosition = ({ data, spriteId }, level, delta) => {
 export const updateTilePosition = (offsetPoint) => ({ data, spriteId }) => {
   const parallaxFactor = propOr(1, 'parallax')(data) / propOr(1, 'scale')(data);
   getAsset(spriteId).tilePosition.set(
-    -offsetPoint.x * parallaxFactor,
-    -offsetPoint.y * parallaxFactor
+    (-offsetPoint.x * parallaxFactor) + 0,
+    (-offsetPoint.y * parallaxFactor) - 0
   );
 };
 
@@ -137,17 +144,14 @@ export function updateTiles(tiles, offsetPoint) {
   tiles.forEach(updateFunc);
 }
 
-export const updateActors = (actors, level, delta, deltaMs, game) => {
-  actors.forEach((actor, index) => {
-    const { data, graphicId, performance, spriteId } = actor;
+export const updateActors = ({actorMap, level, delta, game}) => {
+  const actorKeys = Object.keys(actorMap);
 
-    if (data.ai) {
-      const updateFrequency = getUpdateFrequency(data.distanceFromCenter, 'ai');
-      const shouldUpdate = getShouldUpdate(game, index, updateFrequency);
-      if (shouldUpdate) {
-        updateActorAi(game, actor, delta * updateFrequency, deltaMs * updateFrequency);
-      }
-    }
+  for (let i = 0; i < actorKeys.length; ++i) {
+  // actorKeys.forEach((uid) => {
+    const uid = actorKeys[i];
+    const actor = actorMap[uid];
+    const { data, graphicId, performance, spriteId } = actor;
 
     updateActorPosition(actor, level, delta);
     data.distanceFromCenter = getDistance(game.player.data, data);
@@ -174,9 +178,43 @@ export const updateActors = (actors, level, delta, deltaMs, game) => {
         });
       }
 
-      actors.splice(index, 1);
+      delete actorMap[uid];
       removeAsset(spriteId);
       removeAsset(graphicId);
+    } else {
+      actor.chunkKey = assignToChunk({game, uid, x: data.x, y: data.y });
+    }
+  // });
+  }
+};
+
+export const updateActorsAi = ({actorMap, delta, deltaMs, game}) => {
+  const playerGraphic = getAsset(game.player.graphicId);
+  const actorKeys = Object.keys(actorMap);
+  actorKeys.forEach((uid, index) => {
+    const actor = actorMap[uid];
+    const { data, performance } = actor;
+
+    if (data.ai) {
+
+      // actor.crashDetectionHitArea = {
+      //   x: data.x + data.velocity.x * 40,
+      //   y: data.y + data.velocity.y * 40,
+      //   radius: Math.max(20, Math.round(performance.radiusPx * 2.5))
+      // }
+
+      // drawCircle({
+      //   ...actor.crashDetectionHitArea,
+      //   graphic: playerGraphic,
+      //   lineColor: 0xaa8855,
+      // });
+
+
+      const updateFrequency = getUpdateFrequency(data.distanceFromCenter, 'ai');
+      const shouldUpdate = getShouldUpdate(game, index, updateFrequency);
+      if (shouldUpdate) {
+        updateActorAi(game, actor, delta * updateFrequency, deltaMs * updateFrequency);
+      }
     }
   });
 };

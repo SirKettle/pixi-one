@@ -11,7 +11,7 @@ import {
   OBJECTIVE_TYPE_ELIMINATE_TARGET,
 } from '../utils/objective';
 import { onCompleteLevel } from '../index';
-import { playRadioMessage } from '../../sound';
+import { playRadioMessage, queueSpeech } from '../../sound';
 
 const mission = generateMission({
   key: 'm1',
@@ -21,7 +21,8 @@ const mission = generateMission({
     hostileTeams: ['bad'],
     team: 'good',
     // assetKey: 'craftNcfc',
-    assetKey: 'craftH1',
+    // assetKey: 'craftH1',
+    assetKey: 'spacecraft',
     // hostileTeams: ['good'],
     // team: 'bad',
     // assetKey: 'tCraft',
@@ -50,7 +51,7 @@ const mission = generateMission({
   ],
   actorGroups: [
     {
-      count: 500,
+      count: 250,
       team: 'bad',
       assetKey: 'tCraft',
       hostileTeams: ['good'],
@@ -73,9 +74,13 @@ const mission = generateMission({
 export default {
   ...defaultLevel,
   key: 'level003',
-  title: 'A new order?',
+  title: 'Special assignment',
   description: "Patrol the system's inner rim",
-  intro: ['To be continued...'],
+  intro: [
+    'You are being assigned to a top secret mission',
+    'We have detected large numbers of hostiles in the area',
+    'Patrol the system’s inner rim and await further instructions',
+  ],
   time: {},
   tiles: starsParallax,
   gravity: 0,
@@ -87,16 +92,17 @@ export default {
         createObjective({
           type: OBJECTIVE_TYPE_ELIMINATE_TARGET,
           title: 'The Queen Bee',
-          description: 'Eliminate the general, and the rest will drop like flies',
+          description: 'Eliminate the mother ship, and the rest will drop like flies',
           target: 'queen-bee',
           onComplete: (game) => {
+            queueSpeech('Mission successful. The target has been destroyed');
             setTimeout(() => playRadioMessage('message_we_did_it_kid_back_to_base'), 1500);
             addObjective(
               game,
               createWaypointObjective({
-                title: 'Now back to HQ',
-                description: 'Now time to return to base',
-                waypoint: { position: { x: -3500, y: -500 }, radius: 150 },
+                title: 'Report back to HQ',
+                description: 'The nearest star gate has now been activated. Be careful to avoid other hostiles in the area',
+                waypoint: { position: { x: 1500, y: 2100 }, radius: 150 },
                 onComplete: (game) => {
                   setTimeout(() => onCompleteLevel(game), 2000);
                 },
