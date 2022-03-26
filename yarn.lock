@@ -866,6 +866,16 @@
   dependencies:
     "@pixi/core" "5.2.2"
 
+"@pixi/filter-pixelate@^3.1.1":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@pixi/filter-pixelate/-/filter-pixelate-3.1.1.tgz#8976171f79ad452637651cd5334b4a608323fdf4"
+  integrity sha512-r8kakBMhqJW0gub5mGN7QJAJcdb8QUt4dUyyUKvntAvSzRhHZOrCoBmoC//3p6FFLidPWU9DAkSgWEvoBVaLaQ==
+
+"@pixi/filter-zoom-blur@^3.2.1":
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/@pixi/filter-zoom-blur/-/filter-zoom-blur-3.2.1.tgz#d45c21cee941ab02be0d2fbefd22cf2029349172"
+  integrity sha512-kwlBX0ubFax72xmYuVotNlCpj3R4lpldnjSMjVacYHuBZWA40Wp5+3SGnB+xwRek8BwYPgQBlblogOCIR58/WA==
+
 "@pixi/graphics@5.2.2":
   version "5.2.2"
   resolved "https://registry.yarnpkg.com/@pixi/graphics/-/graphics-5.2.2.tgz#dff1f49ef74c000f76d21800798bd066af611d1e"
@@ -3828,9 +3838,9 @@ minimatch@^3.0.4:
     brace-expansion "^1.1.7"
 
 minimist@^1.2.0, minimist@^1.2.5:
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
-  integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.6.tgz#8637a5b759ea0d6e98702cfb3a9283323c93af44"
+  integrity sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==
 
 mississippi@^3.0.0:
   version "3.0.0"
