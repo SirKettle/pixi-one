@@ -866,6 +866,16 @@
   dependencies:
     "@pixi/core" "5.2.2"
 
+"@pixi/filter-pixelate@^3.1.1":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@pixi/filter-pixelate/-/filter-pixelate-3.1.1.tgz#8976171f79ad452637651cd5334b4a608323fdf4"
+  integrity sha512-r8kakBMhqJW0gub5mGN7QJAJcdb8QUt4dUyyUKvntAvSzRhHZOrCoBmoC//3p6FFLidPWU9DAkSgWEvoBVaLaQ==
+
+"@pixi/filter-zoom-blur@^3.2.1":
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/@pixi/filter-zoom-blur/-/filter-zoom-blur-3.2.1.tgz#d45c21cee941ab02be0d2fbefd22cf2029349172"
+  integrity sha512-kwlBX0ubFax72xmYuVotNlCpj3R4lpldnjSMjVacYHuBZWA40Wp5+3SGnB+xwRek8BwYPgQBlblogOCIR58/WA==
+
 "@pixi/graphics@5.2.2":
   version "5.2.2"
   resolved "https://registry.yarnpkg.com/@pixi/graphics/-/graphics-5.2.2.tgz#dff1f49ef74c000f76d21800798bd066af611d1e"
@@ -2151,9 +2161,9 @@ decamelize@^1.2.0:
   integrity sha1-9lNNFRSCabIDUue+4m9QH5oZEpA=
 
 decode-uri-component@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.0.tgz#eb3913333458775cb84cd1a1fae062106bb87545"
-  integrity sha1-6zkTMzRYd1y4TNGh+uBiEGu4dUU=
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.2.tgz#e69dbe25d37941171dd540e024c444cd5188e1e9"
+  integrity sha512-FqUYQ+8o158GyGTrMFJms9qh3CqTKvAqgqsTnkLI8sKu0028orqBhxNMFkFen0zGyg6epACD32pjVk58ngIErQ==
 
 deep-equal@^1.0.1:
   version "1.1.1"
